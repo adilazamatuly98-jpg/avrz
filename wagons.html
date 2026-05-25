@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Вагоны — АРМ Ремонт{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div class="page-title">Вагоны <span>в ремонте</span></div>
+    {% if role in ['nachalnik'] %}
+    <button class="btn btn-primary" onclick="openAddWagon()">＋ Добавить вагон</button>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Реестр вагонов</div>
+      <div class="flex gap-2">
+        <input class="form-control" id="search-wagons" style="width:220px;" placeholder="🔍 Поиск по номеру..." oninput="filterWagons()">
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="tbl-wrap">
+        <table id="wagons-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Номер вагона</th><th>Вх. номер</th>
+              <th>Дата</th><th>Статус</th><th>ОПЗС</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="wagons-body">
+            <tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px;">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Wagon -->
+<div class="modal-overlay" id="modal-add-wagon">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Добавить вагон</div>
+      <button class="btn-close" onclick="closeModal('modal-add-wagon')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info">При добавлении вагона автоматически создаются документы ОПЗС для участков <b>Автосцепка</b> и <b>Тележечный</b>.</div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">Номер вагона *</label>
+          <input class="form-control" id="w-number" placeholder="43857294">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Входящий номер *</label>
+          <input class="form-control" id="w-incoming" placeholder="ВХ-2024-001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Дата поступления</label>
+        <input class="form-control" id="w-date" type="date">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-wagon')">Отмена</button>
+      <button class="btn btn-primary" onclick="addWagon()">Добавить вагон</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let allWagons = [];
+let allOpzs = [];
+
+async function load() {
+  const [w, o] = await Promise.all([
+    fetch('/api/wagons').then(r=>r.json()),
+    fetch('/api/opzs').then(r=>r.json()),
+  ]);
+  allWagons = w; allOpzs = o;
+  renderWagons(w);
+}
+
+function renderWagons(list) {
+  const tbody = document.getElementById('wagons-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px;">Вагонов нет</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(w => {
+    const docs = allOpzs.filter(d => d.wagon_id === w.id);
+    const docBadges = docs.map(d => `<span class="badge ${d.status==='Открыт'?'badge-open':'badge-done'}" style="cursor:pointer;margin-right:3px;" onclick="window.location='/opzs?doc=${d.id}'">${d.uchastok==='avtotsepka'?'АС':d.uchastok==='tележечный'?'ТЛ':'АКП'} #${d.id}</span>`).join('');
+    return `<tr>
+      <td><span class="text-mono" style="color:var(--text2);">${w.id}</span></td>
+      <td><span class="font-bold text-mono">${w.number||'—'}</span></td>
+      <td><span class="text-mono">${w.incoming_number||'—'}</span></td>
+      <td>${w.date||'—'}</td>
+      <td><span class="badge badge-warn">${w.status}</span></td>
+      <td>${docBadges || '<span class="text-muted">—</span>'}</td>
+      <td><a href="/opzs?wagon=${w.id}" class="btn btn-secondary btn-sm">ОПЗС</a></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterWagons() {
+  const q = document.getElementById('search-wagons').value.toLowerCase();
+  renderWagons(allWagons.filter(w => (w.number||'').toLowerCase().includes(q) || (w.incoming_number||'').toLowerCase().includes(q)));
+}
+
+function openAddWagon() {
+  document.getElementById('w-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-add-wagon').classList.add('show');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+async function addWagon() {
+  const number = document.getElementById('w-number').value.trim();
+  const incoming = document.getElementById('w-incoming').value.trim();
+  const date = document.getElementById('w-date').value;
+  if (!number || !incoming) { alert('Заполните номер вагона и входящий номер'); return; }
+  const r = await fetch('/api/wagons', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({number, incoming_number: incoming, date})});
+  const d = await r.json();
+  if (d.ok) { closeModal('modal-add-wagon'); load(); }
+}
+
+load();
+</script>
+{% endblock %}

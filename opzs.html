@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+{% block title %}ОПЗС — АРМ Ремонт{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div class="page-title">ОПЗС <span>документы</span></div>
+    {% if role == 'master' and uchastok == 'akp' %}
+    <button class="btn btn-primary" onclick="openCreateAKP()">＋ Создать ОПЗС (АКП)</button>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+    {% if role == 'nachalnik' %}
+    <button class="btn btn-secondary tab-btn active" data-uch="">Все</button>
+    <button class="btn btn-secondary tab-btn" data-uch="avtotsepka">Автосцепка</button>
+    <button class="btn btn-secondary tab-btn" data-uch="tележечный">Тележечный</button>
+    <button class="btn btn-secondary tab-btn" data-uch="akp">АКП</button>
+    {% elif role == 'master' and uchastok == 'avtotsepka' %}
+    <div class="badge badge-warn" style="padding:6px 14px;font-size:13px;">Участок: АВТОСЦЕПКА</div>
+    {% elif role == 'master' and uchastok == 'tележечный' %}
+    <div class="badge badge-warn" style="padding:6px 14px;font-size:13px;">Участок: ТЕЛЕЖЕЧНЫЙ</div>
+    {% elif role == 'master' and uchastok == 'akp' %}
+    <div class="badge badge-warn" style="padding:6px 14px;font-size:13px;">Участок: АКП</div>
+    {% elif role == 'defektoskopist' %}
+    <div class="badge badge-open" style="padding:6px 14px;font-size:13px;">Режим: ДЕФЕКТОСКОПИСТ</div>
+    {% endif %}
+    <input class="form-control" id="search-opzs" style="width:220px;margin-left:auto;" placeholder="🔍 Поиск...">
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Список документов</div></div>
+    <div class="card-body" style="padding:0;">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>№ Документа</th><th>Вагон</th><th>Вх. номер</th><th>Дата</th><th>Участок</th><th>Статус</th><th>Действия</th></tr>
+          </thead>
+          <tbody id="opzs-body">
+            <tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px;">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: ОПЗС Document Viewer/Editor -->
+<div class="modal-overlay" id="modal-opzs">
+  <div class="modal modal-lg" style="max-width:1100px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="opzs-modal-title">ОПЗС</div>
+        <div class="text-muted" style="font-size:12px;" id="opzs-modal-sub"></div>
+      </div>
+      <button class="btn-close" onclick="closeModal('modal-opzs')">✕</button>
+    </div>
+    <div class="modal-body" id="opzs-modal-body"></div>
+    <div class="modal-footer" id="opzs-modal-footer"></div>
+  </div>
+</div>
+
+<!-- Modal: Create AKP ОПЗС -->
+<div class="modal-overlay" id="modal-akp-create">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Создать ОПЗС — АКП</div>
+      <button class="btn-close" onclick="closeModal('modal-akp-create')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn">ОПЗС для АКП создаётся вручную, 1 на смену</div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">Номер вагона</label>
+          <input class="form-control" id="akp-wagon-num">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Входящий номер</label>
+          <input class="form-control" id="akp-incoming">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Дата</label>
+        <input class="form-control" id="akp-date" type="date">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-akp-create')">Отмена</button>
+      <button class="btn btn-primary" onclick="createAKP()">Создать</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const ROLE = '{{ role }}';
+const UCHASTOK = '{{ uchastok }}';
+let REF = {};
+let allDocs = [];
+let currentDoc = null;
+
+async function init() {
+  REF = await fetch('/api/reference/details').then(r=>r.json());
+  const urlp = new URLSearchParams(window.location.search);
+  const filterUch = ROLE === 'nachalnik' ? '' : UCHASTOK === 'avtotsepka' ? 'avtotsepka' : UCHASTOK === 'akp' ? 'akp' : UCHASTOK;
+  const qs = filterUch ? `?uchastok=${encodeURIComponent(filterUch)}` : '';
+  allDocs = await fetch('/api/opzs' + qs).then(r=>r.json());
+  renderList(allDocs);
+  if (urlp.get('doc')) openDoc(urlp.get('doc'));
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const u = btn.dataset.uch;
+      const qs2 = u ? `?uchastok=${encodeURIComponent(u)}` : '';
+      allDocs = await fetch('/api/opzs' + qs2).then(r=>r.json());
+      renderList(allDocs);
+    });
+  });
+  document.getElementById('search-opzs').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    renderList(allDocs.filter(d=>(d.wagon_number||'').toLowerCase().includes(q)||(d.id||'').toLowerCase().includes(q)));
+  });
+}
+
+const UCHASTOK_LABEL = { avtotsepka: 'Автосцепка', 'tележечный': 'Тележечный', akp: 'АКП' };
+
+function renderList(docs) {
+  const tbody = document.getElementById('opzs-body');
+  if (!docs.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px;">Документов нет</td></tr>'; return; }
+  tbody.innerHTML = docs.map(d => `<tr>
+    <td><span class="text-mono font-bold">#${d.id}</span></td>
+    <td><span class="text-mono">${d.wagon_number||'—'}</span></td>
+    <td>${d.incoming_number||'—'}</td>
+    <td>${d.date||'—'}</td>
+    <td><span class="badge badge-warn">${UCHASTOK_LABEL[d.uchastok]||d.uchastok}</span></td>
+    <td><span class="badge ${d.status==='Открыт'?'badge-open':'badge-done'}">${d.status}</span></td>
+    <td><button class="btn btn-secondary btn-sm" onclick="openDoc('${d.id}')">Открыть</button></td>
+  </tr>`).join('');
+}
+
+async function openDoc(id) {
+  currentDoc = await fetch(`/api/opzs/${id}`).then(r=>r.json());
+  const d = currentDoc;
+  const title = document.getElementById('opzs-modal-title');
+  const sub = document.getElementById('opzs-modal-sub');
+  const body = document.getElementById('opzs-modal-body');
+  const footer = document.getElementById('opzs-modal-footer');
+  title.textContent = `ОПЗС #${d.id} — ${UCHASTOK_LABEL[d.uchastok]||d.uchastok}`;
+  sub.textContent = `Вагон: ${d.wagon_number||'—'} | Вх.№ ${d.incoming_number||'—'} | ${d.date||'—'}`;
+
+  if (d.uchastok === 'akp') {
+    body.innerHTML = buildAKPBody(d);
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('modal-opzs')">Закрыть</button>
+      ${ROLE==='master'?`<button class="btn btn-primary" onclick="saveAKPDoc()">💾 Сохранить</button>`:''}`;
+  } else if (ROLE === 'defektoskopist') {
+    body.innerHTML = buildDefektBody(d);
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('modal-opzs')">Закрыть</button>
+      <button class="btn btn-primary" onclick="saveDefektDoc()">💾 Сохранить</button>`;
+  } else if (ROLE === 'master') {
+    body.innerHTML = buildMasterBody(d);
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('modal-opzs')">Закрыть</button>
+      <button class="btn btn-primary" onclick="saveMasterDoc()">💾 Сохранить</button>`;
+  } else {
+    body.innerHTML = buildReadonlyBody(d);
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('modal-opzs')">Закрыть</button>`;
+  }
+  document.getElementById('modal-opzs').classList.add('show');
+}
+
+/* ── DEFEKTOSKOPIST body ─────────────────────────────────────────────────── */
+function buildDefektBody(d) {
+  const numRows = (d.defekt_numbered||[]).map((r,i)=>`
+    <tr>
+      <td><select class="form-control dn-detalь" data-i="${i}">${REF.numbered.map(x=>`<option ${x===r.detal?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control dn-nomer-do" data-i="${i}" value="${r.nomer_do||''}"></td>
+      <td><select class="form-control dn-zavod" data-i="${i}">${REF.zavody.map(x=>`<option ${x===r.zavod?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control dn-god" data-i="${i}" value="${r.god||''}" style="width:70px;"></td>
+      <td><input class="form-control dn-snyato" data-i="${i}" value="${r.snyato||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeRow('defekt_numbered',${i})">✕</button></td>
+    </tr>`).join('');
+  const unnumRows = (d.defekt_unnumbered||[]).map((r,i)=>`
+    <tr>
+      <td><select class="form-control du-detal" data-i="${i}">${REF.unnumbered.map(x=>`<option ${x===r.detal?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control du-kol" data-i="${i}" value="${r.kol||''}" style="width:80px;"></td>
+      <td><input class="form-control du-snyato" data-i="${i}" value="${r.snyato||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeRow('defekt_unnumbered',${i})">✕</button></td>
+    </tr>`).join('');
+
+  let typesHtml = '';
+  Object.keys(REF.detail_types||{}).forEach(det => {
+    const types = REF.detail_types[det].types;
+    const savedType = (d.defekt_types||[]).find(x=>x.detal===det) || {};
+    typesHtml += `<tr>
+      <td><b>${det}</b></td>
+      <td>
+        <select class="form-control dtype-sel" data-det="${det}" onchange="onTypeChange(this)">
+          <option value="">— выберите тип —</option>
+          ${types.map(t=>`<option ${t===savedType.type?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </td>
+      <td id="dtype-parts-${det.replace(/\s/g,'_')}" style="font-size:12px;color:var(--text2);">
+        ${savedType.parts ? savedType.parts.join(', ') : ''}
+      </td>
+    </tr>`;
+  });
+
+  return `
+    <div class="section-label">Номерные детали</div>
+    <div class="tbl-wrap mb-3">
+      <table>
+        <thead><tr><th>Деталь</th><th>Номер (до)</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th></th></tr></thead>
+        <tbody id="tbl-defekt-numbered">${numRows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary btn-sm mb-4" onclick="addRow('defekt_numbered')">＋ Добавить деталь</button>
+
+    <div class="section-label">Не номерные детали</div>
+    <div class="tbl-wrap mb-3">
+      <table>
+        <thead><tr><th>Деталь</th><th>Кол-во</th><th>Снято/ушло</th><th></th></tr></thead>
+        <tbody id="tbl-defekt-unnumbered">${unnumRows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary btn-sm mb-4" onclick="addRow('defekt_unnumbered')">＋ Добавить деталь</button>
+
+    <div class="section-label">Типы деталей</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Деталь</th><th>Тип</th><th>Запчасти по типу</th></tr></thead>
+        <tbody>${typesHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+async function onTypeChange(sel) {
+  const det = sel.dataset.det;
+  const type = sel.value;
+  const key = det.replace(/\s/g,'_');
+  const cell = document.getElementById('dtype-parts-' + key);
+  if (!type) { cell.textContent = ''; return; }
+  const r = await fetch(`/api/reference/detail_type_parts?detail=${encodeURIComponent(det)}&type=${encodeURIComponent(type)}`).then(x=>x.json());
+  cell.textContent = r.parts.join(', ');
+}
+
+/* ── MASTER body ─────────────────────────────────────────────────────────── */
+function buildMasterBody(d) {
+  // Show defekt history at top
+  let histHtml = '';
+  if ((d.defekt_numbered||[]).length || (d.defekt_unnumbered||[]).length) {
+    const numH = (d.defekt_numbered||[]).map(r=>`<tr><td>${r.detal||''}</td><td class="text-mono">${r.nomer_do||''}</td><td>${r.zavod||''}</td><td>${r.god||''}</td><td>${r.snyato||''}</td></tr>`).join('');
+    const unnH = (d.defekt_unnumbered||[]).map(r=>`<tr><td>${r.detal||''}</td><td>${r.kol||''}</td><td>${r.snyato||''}</td></tr>`).join('');
+    histHtml = `<div class="history-block">
+      <div class="history-label">История заполнения дефектоскописта</div>
+      ${numH?`<div style="font-size:12px;margin-bottom:6px;color:var(--text2);">Номерные:</div><div class="tbl-wrap mb-3"><table><thead><tr><th>Деталь</th><th>Ном.(до)</th><th>Завод</th><th>Год</th><th>Снято</th></tr></thead><tbody>${numH}</tbody></table></div>`:''}
+      ${unnH?`<div style="font-size:12px;margin-bottom:6px;color:var(--text2);">Не номерные:</div><div class="tbl-wrap"><table><thead><tr><th>Деталь</th><th>Кол-во</th><th>Снято</th></tr></thead><tbody>${unnH}</tbody></table></div>`:''}
+    </div>`;
+  }
+
+  const numRows = (d.master_numbered||[]).map((r,i)=>`
+    <tr>
+      <td><select class="form-control mn-detal" data-i="${i}">${REF.numbered.map(x=>`<option ${x===r.detal?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control mn-nomer-posle" data-i="${i}" value="${r.nomer_posle||''}"></td>
+      <td><select class="form-control mn-zavod" data-i="${i}">${REF.zavody.map(x=>`<option ${x===r.zavod?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control mn-god" data-i="${i}" value="${r.god||''}" style="width:70px;"></td>
+      <td><input class="form-control mn-ustanovleno" data-i="${i}" value="${r.ustanovleno||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeRow('master_numbered',${i})">✕</button></td>
+    </tr>`).join('');
+  const unnumRows = (d.master_unnumbered||[]).map((r,i)=>`
+    <tr>
+      <td><select class="form-control mu-detal" data-i="${i}">${REF.unnumbered.map(x=>`<option ${x===r.detal?'selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input class="form-control mu-kol" data-i="${i}" value="${r.kol||''}" style="width:80px;"></td>
+      <td><input class="form-control mu-ustanovleno" data-i="${i}" value="${r.ustanovleno||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeRow('master_unnumbered',${i})">✕</button></td>
+    </tr>`).join('');
+
+  return `${histHtml}
+    <div class="section-label">Номерные детали (установка)</div>
+    <div class="tbl-wrap mb-3">
+      <table>
+        <thead><tr><th>Деталь</th><th>Номер (после)</th><th>Завод</th><th>Год</th><th>Установлено</th><th></th></tr></thead>
+        <tbody id="tbl-master-numbered">${numRows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary btn-sm mb-4" onclick="addRow('master_numbered')">＋ Добавить деталь</button>
+
+    <div class="section-label">Не номерные детали (установка)</div>
+    <div class="tbl-wrap mb-3">
+      <table>
+        <thead><tr><th>Деталь</th><th>Кол-во</th><th>Установлено</th><th></th></tr></thead>
+        <tbody id="tbl-master-unnumbered">${unnumRows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addRow('master_unnumbered')">＋ Добавить деталь</button>`;
+}
+
+/* ── AKP body ────────────────────────────────────────────────────────────── */
+function buildAKPBody(d) {
+  const detailOptions = Object.keys(REF.akp_details||{}).map(x=>`<option>${x}</option>`).join('');
+  const rows = (d.akp_rows||[]).map((r,i)=>`
+    <tr>
+      <td>${r.detal||''}</td>
+      <td>${r.type||''}</td>
+      <td>${r.naim||''}</td>
+      <td><input class="form-control akp-kol" data-i="${i}" value="${r.kol||''}" style="width:70px;" ${ROLE!=='master'?'readonly':''}></td>
+      <td><input class="form-control akp-snyato" data-i="${i}" value="${r.snyato||''}" ${ROLE!=='master'?'readonly':''}></td>
+      <td><input class="form-control akp-ustanov" data-i="${i}" value="${r.ustanovleno||''}" ${ROLE!=='master'?'readonly':''}></td>
+      ${ROLE==='master'?`<td><button class="btn btn-danger btn-xs" onclick="removeAKPRow(${i})">✕</button></td>`:'<td></td>'}
+    </tr>`).join('');
+
+  const editBlock = ROLE === 'master' ? `
+    <div class="card mb-4" style="border-color:var(--accent);">
+      <div class="card-header" style="border-bottom-color:rgba(240,165,0,.2);"><div class="card-title" style="color:var(--accent);">Добавить запись</div></div>
+      <div class="card-body">
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label class="form-label">Деталь</label>
+            <select class="form-control" id="akp-new-detal" onchange="loadAKPTypes()">
+              <option value="">— выберите —</option>${detailOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Тип детали</label>
+            <select class="form-control" id="akp-new-type" onchange="loadAKPParts()">
+              <option value="">— сначала деталь —</option>
+            </select>
+          </div>
+        </div>
+        <div id="akp-parts-block"></div>
+      </div>
+    </div>` : '';
+
+  return `${editBlock}
+    <div class="section-label">Таблица запчастей АКП</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Деталь</th><th>Тип</th><th>Наименование</th><th>Кол-во</th><th>Снято/ушло</th><th>Установлено</th><th></th></tr></thead>
+        <tbody id="tbl-akp-rows">${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function loadAKPTypes() {
+  const det = document.getElementById('akp-new-detal').value;
+  const sel = document.getElementById('akp-new-type');
+  sel.innerHTML = '<option value="">— выберите тип —</option>';
+  if (det && REF.akp_details[det]) {
+    REF.akp_details[det].types.forEach(t => sel.innerHTML += `<option>${t}</option>`);
+  }
+  document.getElementById('akp-parts-block').innerHTML = '';
+}
+
+async function loadAKPParts() {
+  const det = document.getElementById('akp-new-detal').value;
+  const type = document.getElementById('akp-new-type').value;
+  if (!det || !type) return;
+  const r = await fetch(`/api/reference/akp_parts?detail=${encodeURIComponent(det)}&type=${encodeURIComponent(type)}`).then(x=>x.json());
+  const html = r.parts.map((p,i)=>`
+    <div class="form-row form-row-4" style="margin-bottom:6px;align-items:center;">
+      <div style="grid-column:span 1;padding:6px 0;font-size:13px;">${p}</div>
+      <input class="form-control" id="akpp-kol-${i}" placeholder="Кол-во" style="width:80px;">
+      <input class="form-control" id="akpp-snyato-${i}" placeholder="Снято/ушло">
+      <input class="form-control" id="akpp-ustanov-${i}" placeholder="Установлено">
+    </div>`).join('');
+  document.getElementById('akp-parts-block').innerHTML = `
+    <div class="section-label">Запчасти по типу «${type}»</div>
+    ${html}
+    <button class="btn btn-success btn-sm mt-3" onclick="addAKPRows('${det}','${type}',${JSON.stringify(r.parts)})">＋ Добавить в таблицу</button>`;
+}
+
+function addAKPRows(det, type, parts) {
+  if (!currentDoc.akp_rows) currentDoc.akp_rows = [];
+  parts.forEach((p, i) => {
+    currentDoc.akp_rows.push({
+      detal: det, type,
+      naim: p,
+      kol: document.getElementById(`akpp-kol-${i}`)?.value || '',
+      snyato: document.getElementById(`akpp-snyato-${i}`)?.value || '',
+      ustanovleno: document.getElementById(`akpp-ustanov-${i}`)?.value || '',
+    });
+  });
+  // Re-render
+  const rows = currentDoc.akp_rows.map((r,i)=>`
+    <tr>
+      <td>${r.detal}</td><td>${r.type}</td><td>${r.naim}</td>
+      <td><input class="form-control akp-kol" data-i="${i}" value="${r.kol||''}" style="width:70px;"></td>
+      <td><input class="form-control akp-snyato" data-i="${i}" value="${r.snyato||''}"></td>
+      <td><input class="form-control akp-ustanov" data-i="${i}" value="${r.ustanovleno||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeAKPRow(${i})">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('tbl-akp-rows').innerHTML = rows;
+  document.getElementById('akp-parts-block').innerHTML = '<div class="alert alert-success">Строки добавлены в таблицу.</div>';
+}
+
+function removeAKPRow(i) {
+  currentDoc.akp_rows.splice(i, 1);
+  buildAKPRowsTable();
+}
+function buildAKPRowsTable() {
+  const rows = (currentDoc.akp_rows||[]).map((r,i)=>`
+    <tr>
+      <td>${r.detal}</td><td>${r.type}</td><td>${r.naim}</td>
+      <td><input class="form-control akp-kol" data-i="${i}" value="${r.kol||''}" style="width:70px;"></td>
+      <td><input class="form-control akp-snyato" data-i="${i}" value="${r.snyato||''}"></td>
+      <td><input class="form-control akp-ustanov" data-i="${i}" value="${r.ustanovleno||''}"></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeAKPRow(${i})">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('tbl-akp-rows').innerHTML = rows;
+}
+
+function buildReadonlyBody(d) {
+  return `<div class="alert alert-info">Просмотр документа. Ваша роль не предусматривает редактирование.</div>
+    ${buildDefektBody(d)}`;
+}
+
+/* ── Row management ──────────────────────────────────────────────────────── */
+function addRow(section) {
+  if (!currentDoc[section]) currentDoc[section] = [];
+  currentDoc[section].push({});
+  openDoc(currentDoc.id);
+}
+function removeRow(section, i) {
+  currentDoc[section].splice(i, 1);
+  openDoc(currentDoc.id);
+}
+
+/* ── Save functions ──────────────────────────────────────────────────────── */
+function collectDefektData() {
+  const numbered = [...document.querySelectorAll('#tbl-defekt-numbered tr')].map(tr=>({
+    detal: tr.querySelector('.dn-detalь')?.value,
+    nomer_do: tr.querySelector('.dn-nomer-do')?.value,
+    zavod: tr.querySelector('.dn-zavod')?.value,
+    god: tr.querySelector('.dn-god')?.value,
+    snyato: tr.querySelector('.dn-snyato')?.value,
+  })).filter(r=>r.detal);
+  const unnumbered = [...document.querySelectorAll('#tbl-defekt-unnumbered tr')].map(tr=>({
+    detal: tr.querySelector('.du-detal')?.value,
+    kol: tr.querySelector('.du-kol')?.value,
+    snyato: tr.querySelector('.du-snyato')?.value,
+  })).filter(r=>r.detal);
+  const types = [...document.querySelectorAll('.dtype-sel')].filter(s=>s.value).map(s=>{
+    const det = s.dataset.det;
+    const key = det.replace(/\s/g,'_');
+    const parts = document.getElementById('dtype-parts-'+key)?.textContent?.split(', ').filter(Boolean) || [];
+    return { detal: det, type: s.value, parts };
+  });
+  return { defekt_numbered: numbered, defekt_unnumbered: unnumbered, defekt_types: types };
+}
+
+async function saveDefektDoc() {
+  const data = collectDefektData();
+  await fetch(`/api/opzs/${currentDoc.id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+  closeModal('modal-opzs');
+  init();
+  alert('Данные дефектоскописта сохранены');
+}
+
+async function saveMasterDoc() {
+  const numbered = [...document.querySelectorAll('#tbl-master-numbered tr')].map(tr=>({
+    detal: tr.querySelector('.mn-detal')?.value,
+    nomer_posle: tr.querySelector('.mn-nomer-posle')?.value,
+    zavod: tr.querySelector('.mn-zavod')?.value,
+    god: tr.querySelector('.mn-god')?.value,
+    ustanovleno: tr.querySelector('.mn-ustanovleno')?.value,
+  })).filter(r=>r.detal);
+  const unnumbered = [...document.querySelectorAll('#tbl-master-unnumbered tr')].map(tr=>({
+    detal: tr.querySelector('.mu-detal')?.value,
+    kol: tr.querySelector('.mu-kol')?.value,
+    ustanovleno: tr.querySelector('.mu-ustanovleno')?.value,
+  })).filter(r=>r.detal);
+  await fetch(`/api/opzs/${currentDoc.id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({master_numbered: numbered, master_unnumbered: unnumbered, status:'Закрыт'})});
+  closeModal('modal-opzs');
+  init();
+  alert('Данные мастера сохранены');
+}
+
+async function saveAKPDoc() {
+  const rows = (currentDoc.akp_rows||[]).map((r,i)=>({
+    ...r,
+    kol: document.querySelector(`.akp-kol[data-i="${i}"]`)?.value || r.kol,
+    snyato: document.querySelector(`.akp-snyato[data-i="${i}"]`)?.value || r.snyato,
+    ustanovleno: document.querySelector(`.akp-ustanov[data-i="${i}"]`)?.value || r.ustanovleno,
+  }));
+  await fetch(`/api/opzs/${currentDoc.id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({akp_rows: rows})});
+  closeModal('modal-opzs');
+  init();
+  alert('АКП данные сохранены');
+}
+
+function openCreateAKP() {
+  document.getElementById('akp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-akp-create').classList.add('show');
+}
+async function createAKP() {
+  const data = {
+    wagon_number: document.getElementById('akp-wagon-num').value,
+    incoming_number: document.getElementById('akp-incoming').value,
+    date: document.getElementById('akp-date').value,
+  };
+  const r = await fetch('/api/opzs', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+  const d = await r.json();
+  if (d.ok) { closeModal('modal-akp-create'); init(); }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+init();
+</script>
+{% endblock %}

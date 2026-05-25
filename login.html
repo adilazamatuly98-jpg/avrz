@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>АРМ Ремонт Вагонов — Вход</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --border: #30363d; --accent: #f0a500;
+  --text: #e6edf3; --text2: #8b949e;
+  --danger: #da3633;
+}
+body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; display: flex; min-height: 100vh; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.bg-pattern { position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(240,165,0,.03) 40px, rgba(240,165,0,.03) 41px), repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(240,165,0,.03) 40px, rgba(240,165,0,.03) 41px); pointer-events: none; }
+.bg-glow { position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(240,165,0,.06) 0%, transparent 70%); pointer-events: none; }
+.login-wrap { position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 20px; }
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo-text { font-family: 'Oswald', sans-serif; font-size: 42px; font-weight: 700; color: var(--accent); letter-spacing: 4px; }
+.login-logo-sub { color: var(--text2); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+.login-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 32px; }
+.login-title { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text2); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; color: var(--text2); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .8px; }
+.form-control { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; outline: none; transition: border-color .15s; }
+.form-control:focus { border-color: var(--accent); }
+.btn-login { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; cursor: pointer; transition: background .15s; margin-top: 8px; }
+.btn-login:hover { background: #ffb833; }
+.error-msg { background: rgba(218,54,51,.1); border: 1px solid rgba(218,54,51,.3); color: #f85149; border-radius: 4px; padding: 10px 14px; font-size: 13px; margin-top: 14px; display: none; }
+.demo-users { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.demo-label { color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+.demo-user { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: background .1s; font-size: 13px; }
+.demo-user:hover { background: var(--bg3); }
+.demo-user-name { color: var(--text); }
+.demo-user-role { color: var(--text2); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="bg-glow"></div>
+<div class="login-wrap">
+  <div class="login-logo">
+    <div class="login-logo-text">РЦ/АРМ</div>
+    <div class="login-logo-sub">Система учёта ремонта вагонов</div>
+  </div>
+  <div class="login-card">
+    <div class="login-title">Авторизация</div>
+    <div class="form-group">
+      <label class="form-label">Логин</label>
+      <input class="form-control" id="username" type="text" placeholder="Введите логин" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Пароль</label>
+      <input class="form-control" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">ВОЙТИ В СИСТЕМУ</button>
+    <div class="error-msg" id="error-msg"></div>
+    <div class="demo-users">
+      <div class="demo-label">Быстрый вход (демо)</div>
+      <div class="demo-user" onclick="fillLogin('nachalnik','1')">
+        <span class="demo-user-name">Начальник цеха</span>
+        <span class="demo-user-role">nachalnik / 1</span>
+      </div>
+      <div class="demo-user" onclick="fillLogin('master_auto','1')">
+        <span class="demo-user-name">Мастер (Автосцепка)</span>
+        <span class="demo-user-role">master_auto / 1</span>
+      </div>
+      <div class="demo-user" onclick="fillLogin('master_telega','1')">
+        <span class="demo-user-name">Мастер (Тележечный)</span>
+        <span class="demo-user-role">master_telega / 1</span>
+      </div>
+      <div class="demo-user" onclick="fillLogin('master_akp','1')">
+        <span class="demo-user-name">Мастер (АКП)</span>
+        <span class="demo-user-role">master_akp / 1</span>
+      </div>
+      <div class="demo-user" onclick="fillLogin('master_roller','1')">
+        <span class="demo-user-name">Мастер (Роликовый)</span>
+        <span class="demo-user-role">master_roller / 1</span>
+      </div>
+      <div class="demo-user" onclick="fillLogin('defekt1','1')">
+        <span class="demo-user-name">Дефектоскопист</span>
+        <span class="demo-user-role">defekt1 / 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function fillLogin(u, p) {
+  document.getElementById('username').value = u;
+  document.getElementById('password').value = p;
+  doLogin();
+}
+async function doLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Вход...'; btn.disabled = true;
+  try {
+    const r = await fetch('/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
+    const d = await r.json();
+    if (d.ok) { window.location.href = '/dashboard'; }
+    else {
+      const em = document.getElementById('error-msg');
+      em.textContent = d.error; em.style.display = 'block';
+      btn.textContent = 'ВОЙТИ В СИСТЕМУ'; btn.disabled = false;
+    }
+  } catch(e) {
+    btn.textContent = 'ВОЙТИ В СИСТЕМУ'; btn.disabled = false;
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
