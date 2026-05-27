@@ -639,28 +639,37 @@ function ensureOption(id,val){
   el.value=val;
 }
 
-// Динамическое отображение и скрытие специфических полей (АКП, Снято/ушло, Выбраковка)
+// Динамическое отображение и скрытие специфических полей (АКП, Снято/ушло, Установлено из, Выбраковка)
 function handleModalFieldsVisibility(kind) {
-  const isAKP = (curDoc.uchastok === 'akp');
+  if(!curDoc) return;
+  const isAKP    = (curDoc.uchastok === 'akp');
   const isDefekt = (ROLE === 'defektoskopist');
-  
-  // 1. Поля АКП (тип, класс, поставлено из)
+  const isMaster = (ROLE === 'master' || ROLE === 'master_roller');
+  const isBoss   = (ROLE === 'nachalnik' || ROLE === 'nachalnik_ktc' || ROLE === 'admin');
+
+  // 1. АКП-специфичные поля (тип/класс)
   const akpFields = document.getElementById('p-akp-fields');
-  if (isAKP && kind === 'num') {
-    akpFields.style.display = 'block';
-    // Поле "Поставлено из" доступно только Мастеру (не дефектоскописту)
-    document.getElementById('wrap-installed-from').style.display = (!isDefekt) ? 'block' : 'none';
-  } else {
-    akpFields.style.display = 'none';
+  if (akpFields) {
+    akpFields.style.display = (isAKP && kind === 'num') ? 'block' : 'none';
   }
-  
-  // 2. Поле "Обоснование выбраковки" (только дефектоскописту при выборе "Забраковано")
-  const condVal = document.getElementById(kind === 'num' ? 'p-cond-num' : 'p-cond-unnum').value;
-  const rejectWrap = document.getElementById('wrap-reject-reason');
-  if (isDefekt && condVal === 'забраковано' || condVal === 'Забраковано') {
-    rejectWrap.style.display = 'block';
-  } else {
-    rejectWrap.style.display = 'none';
+
+  // 2. Логика «Снято/ушло» vs «Установлено из»
+  // Деф: только Снято/ушло. Мастер Авт/Тел/Кузов/Рол: только Установлено. АКП Мастер: оба. Боссы: оба.
+  const showCond      = isDefekt || isAKP || isBoss;
+  const showInstalled = (isMaster && !isDefekt) || isBoss;
+
+  const W = id => document.getElementById(id);
+  if(W('wrap-cond-num'))           W('wrap-cond-num').style.display          = showCond      ? '' : 'none';
+  if(W('wrap-cond-unnum'))         W('wrap-cond-unnum').style.display        = showCond      ? '' : 'none';
+  if(W('wrap-installed-from-num')) W('wrap-installed-from-num').style.display= showInstalled ? '' : 'none';
+  if(W('wrap-installed-from-unnum'))W('wrap-installed-from-unnum').style.display = showInstalled ? '' : 'none';
+
+  // 3. «Обоснование выбраковки» — при выборе «забраковано»
+  const condEl = W(kind === 'num' ? 'p-cond-num' : 'p-cond-unnum');
+  const condVal = condEl ? condEl.value : '';
+  const rejectWrap = W('wrap-reject-reason');
+  if (rejectWrap) {
+    rejectWrap.style.display = (condVal === 'забраковано') ? 'block' : 'none';
   }
 }
 
@@ -671,13 +680,15 @@ document.getElementById('p-cond-unnum').onchange = () => handleModalFieldsVisibi
 function openAddPart(kind){
   editIndex=null;
   fillPartRefs();
-document.getElementById('p-number').value='';
+  document.getElementById('p-number').value='';
   document.getElementById('p-number-after').value='';
   document.getElementById('p-qty').value='1';
   document.getElementById('p-reject-reason').value='';
   document.getElementById('p-type-detail').value='';
   document.getElementById('p-class-detail').value='';
-  document.getElementById('p-installed-from').value='Из оборота';
+  // Reset new installed-from selects (default first option)
+  const inN=document.getElementById('p-installed-num');     if(inN) inN.selectedIndex=0;
+  const inU=document.getElementById('p-installed-unnum');   if(inU) inU.selectedIndex=0;
   setPartKind(kind||'num');
   
   // подставляем последние завод/год (фокусируемся на 2026)
