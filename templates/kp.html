@@ -42,7 +42,6 @@
         <div class="form-group"><label class="form-label">Тип КП</label>
           <select class="form-control" id="f-tip">
             <option>РУ1-950</option><option>РУ1Ш-950</option>
-            <option>РВ2Ш-957</option><option>РВ3Ш-957</option>
           </select></div>
         <div class="form-group"><label class="form-label">Год изготовления</label>
           <select class="form-control" id="f-god"></select></div>
@@ -173,7 +172,7 @@ function openCreate() {
   document.getElementById('doc-title').textContent = 'Новый документ · ' + TAB_LABEL[cur];
   ['f-num', 'f-vhod', 'f-note', 'f-tlev', 'f-tprav'].forEach(id => document.getElementById(id).value = '');
   fillYears('f-god', '');
-  document.getElementById('f-tip').value    = 'РУ1-950';
+  document.getElementById('f-tip').value = 'РУ1-950';
   document.getElementById('f-zavod').value  = '';
   document.getElementById('f-remont').value = 'НОНК';
   setupModal(cur === 'kp_departure');
