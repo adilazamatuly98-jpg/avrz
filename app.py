@@ -977,15 +977,29 @@ def api_transfers_create():
     # Support both old peer-to-peer and new request-from-warehouse mode
     from_source = data.get("from_source", "")  # e.g. sklad_metal
     to_user = data.get("to_user") or current_user()["username"]
-    rec  = {
+    # Multi-item support: prefer items array, fall back to single item/qty
+    items_arr = data.get("items") or []
+    if not items_arr and data.get("item"):
+        items_arr = [{"item": data.get("item", ""), "qty": int(data.get("qty") or 0)}]
+    # Normalize qty to int
+    norm_items = []
+    for it in items_arr:
+        if (it.get("item") or "").strip():
+            norm_items.append({
+                "item": it["item"].strip(),
+                "qty":  int(it.get("qty") or 1),
+            })
+
+    rec = {
         "id":          _id,
         "from_user":   current_user()["username"],
         "from_name":   current_user()["name"],
-        "from_source": from_source,  # warehouse source (new mode)
+        "from_source": from_source,
         "to_user":     to_user,
         "to_name":     USERS.get(to_user, {}).get("name", to_user),
-        "item":        data.get("item", ""),
-        "qty":         int(data.get("qty") or 0),
+        "items":       norm_items,                # ВСЕ позиции
+        "item":        norm_items[0]["item"] if norm_items else "",   # для обратной совместимости
+        "qty":         norm_items[0]["qty"]  if norm_items else 0,
         "note":        data.get("note", ""),
         "status":      "Создана",
         "created_at":  datetime.now().isoformat(timespec="seconds"),
@@ -1012,25 +1026,43 @@ def api_transfers_action(tid):
 
     if action == "accept":
         rec["status"] = "Принята"
-        qty  = int(rec.get("qty") or 0)
-        name = rec.get("item", "")
-        src  = next((i for i in db["warehouse"]
-                     if i.get("owner") == rec.get("from_user") and i.get("name") == name), None)
-        moved = qty
-        if src:
-            moved = min(qty, int(src.get("qty") or 0))
-            src["qty"] = int(src.get("qty") or 0) - moved
-        dst = next((i for i in db["warehouse"]
-                    if i.get("owner") == rec.get("to_user") and i.get("name") == name), None)
-        if dst:
-            dst["qty"] = int(dst.get("qty") or 0) + qty
-        else:
-            nid = next_id(db, "warehouse")
-            db["warehouse"].append({
-                "id": nid, "owner": rec.get("to_user"), "name": name,
-                "type": (src.get("type") if src else ""), "qty": qty, "note": "Получено по перемещению",
-            })
-        rec["moved_qty"] = moved
+        # Берём массив items, либо строим из старых полей (back-compat)
+        items_list = rec.get("items") or []
+        if not items_list and rec.get("item"):
+            items_list = [{"item": rec.get("item", ""), "qty": int(rec.get("qty") or 0)}]
+
+        total_moved = 0
+        for it in items_list:
+            name = (it.get("item") or "").strip()
+            qty  = int(it.get("qty") or 0)
+            if not name or qty <= 0:
+                continue
+
+            # Списать у отправителя (если у него такая позиция есть)
+            src = next((i for i in db["warehouse"]
+                        if i.get("owner") == rec.get("from_user") and i.get("name") == name), None)
+            moved = qty
+            if src:
+                moved = min(qty, int(src.get("qty") or 0))
+                src["qty"] = int(src.get("qty") or 0) - moved
+            total_moved += moved
+
+            # Зачислить получателю
+            dst = next((i for i in db["warehouse"]
+                        if i.get("owner") == rec.get("to_user") and i.get("name") == name), None)
+            if dst:
+                dst["qty"] = int(dst.get("qty") or 0) + qty
+            else:
+                nid = next_id(db, "warehouse")
+                db["warehouse"].append({
+                    "id": nid,
+                    "owner": rec.get("to_user"),
+                    "name":  name,
+                    "type":  (src.get("type") if src else ""),
+                    "qty":   qty,
+                    "note":  "Получено по заявке",
+                })
+        rec["moved_qty"] = total_moved
     elif action == "reject":
         rec["status"] = "Отклонена"
     save_db(db)
