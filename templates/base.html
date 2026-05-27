@@ -242,7 +242,7 @@ body.nav-open .scrim{display:block}
 .main{transition:margin-left var(--t)}
 .sidebar{transition:transform var(--t)}
 @media(min-width:901px){
-  .burger{display:flex!important}
+  .burger{display:none!important}
   body.sidebar-hidden .sidebar{transform:translateX(-100%)}
   body.sidebar-hidden .main{margin-left:0}
 }
@@ -308,8 +308,8 @@ body.sidebar-hidden .sb-arrow svg{
 
       <div class="nav-sec">Производство</div>
 
-      {# Вагоны — не для дефектоскописта #}
-      {% if role in ['nachalnik', 'master', 'admin'] %}
+      {# Вагоны — все кроме роли admin-only #}
+      {% if role in ['nachalnik', 'nachalnik_ktc', 'master', 'master_roller', 'defektoskopist', 'admin'] %}
       <a class="nav-link" href="/wagons"><span class="ic">🚃</span><span class="nav-txt"> Вагоны</span></a>
       {% endif %}
 
@@ -326,8 +326,14 @@ body.sidebar-hidden .sb-arrow svg{
       {% endif %}
 
       {# Натурный лист — только Мастер тележечного + Начальник #}
-      {% if role in ['nachalnik', 'admin'] or (role == 'master' and uchastok == 'telega') %}
+      {% if role in ['nachalnik', 'nachalnik_ktc', 'admin'] or (role == 'master' and uchastok == 'telega') %}
       <a class="nav-link" href="/nakatka"><span class="ic">📄</span><span class="nav-txt"> Натурный колёсный лист</span></a>
+      {% endif %}
+
+      {# Наряды — ВРЦ мастера (Автосцепка, АКП, Кузов) + начальники #}
+      {% if role in ['nachalnik', 'nachalnik_ktc', 'admin'] or
+           (role == 'master' and uchastok in ['avtoscepka', 'akp', 'kuzov']) %}
+      <a class="nav-link" href="/naryady"><span class="ic">📝</span><span class="nav-txt"> Наряды</span></a>
       {% endif %}
 
       <div class="nav-sec">Логистика</div>
