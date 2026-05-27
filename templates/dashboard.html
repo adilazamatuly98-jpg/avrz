@@ -5,23 +5,28 @@
 <div class="page-header">
   <div>
     <div class="page-title">Добро пожаловать, <span>{{ user }}</span></div>
-    <div class="page-sub">Система учёта и ремонта вагонов и колёсных пар · {{ uchastok_label or 'Управление цехом' }}</div>
+    <div class="page-sub">Система учёта и ремонта вагонов и колёсных пар · {{ uchastok_label or ('Управление ' + ('ВРЦ' if cex == 'vrc' else ('КТЦ' if cex == 'ktc' else 'цехом'))) }}</div>
   </div>
 </div>
 
 <div class="stat-grid" style="margin-bottom:22px;">
-  {% if role in ['nachalnik','master','defektoskopist'] %}
+  {% if role in ['admin', 'nachalnik', 'nachalnik_ktc', 'master', 'defektoskopist'] %}
   <a href="/wagons"><div class="stat"><div class="ico">🚃</div><div class="val" id="s-wagons">—</div><div class="lbl">Вагоны</div><div class="desc">в работе</div></div></a>
-  <a href="/opzs"><div class="stat"><div class="ico">📋</div><div class="val" id="s-opzs">—</div><div class="lbl">ОПЗС</div><div class="desc">требуют действий</div></div></a>
   {% endif %}
-  {% if role in ['nachalnik','defektoskopist','master_roller'] %}
+  {% if role in ['admin', 'nachalnik', 'nachalnik_ktc', 'master', 'master_roller', 'defektoskopist'] %}
+  <a href="/opzs"><div class="stat"><div class="ico">📋</div><div class="val" id="s-opzs">—</div><div class="lbl">ОПЗС</div><div class="desc">{% if role in ['nachalnik','nachalnik_ktc','admin'] %}требуют утверждения{% else %}мои документы{% endif %}</div></div></a>
+  {% endif %}
+  {% if role in ['admin', 'nachalnik_ktc', 'master_roller', 'defektoskopist'] %}
   <a href="/kp"><div class="stat"><div class="ico">⚙️</div><div class="val" id="s-kp">—</div><div class="lbl">Колёсные пары</div><div class="desc">документов</div></div></a>
   {% endif %}
-  {% if role in ['nachalnik','master'] and uchastok in ['telega', None, ''] %}
-  <a href="/nakatka"><div class="stat"><div class="ico">📄</div><div class="val" id="s-nak">—</div><div class="lbl">Натурный колёсный лист</div><div class="desc">создано</div></div></a>
+  {% if role == 'nachalnik_ktc' or role == 'admin' or (role == 'master' and uchastok == 'telega') %}
+  <a href="/nakatka"><div class="stat"><div class="ico">📄</div><div class="val" id="s-nak">—</div><div class="lbl">Натурный лист</div><div class="desc">создано</div></div></a>
+  {% endif %}
+  {% if role in ['admin', 'nachalnik', 'nachalnik_ktc'] or (role == 'master' and uchastok in ['avtoscepka', 'akp', 'kuzov']) %}
+  <a href="/naryady"><div class="stat"><div class="ico">📝</div><div class="val" id="s-nar">—</div><div class="lbl">Наряды</div><div class="desc">за смену</div></div></a>
   {% endif %}
   <a href="/sklad"><div class="stat"><div class="ico">📦</div><div class="val" id="s-sklad">—</div><div class="lbl">Мой склад</div><div class="desc">позиций</div></div></a>
-  <a href="/transfers"><div class="stat"><div class="ico">🔁</div><div class="val" id="s-tr">—</div><div class="lbl">Заявки на получение</div><div class="desc">заявок</div></div></a>
+  <a href="/transfers"><div class="stat"><div class="ico">🔁</div><div class="val" id="s-tr">—</div><div class="lbl">Заявки</div><div class="desc">на получение</div></div></a>
 </div>
 
 <div class="card" id="action-card" style="margin-bottom:22px;display:none;">
@@ -29,34 +34,77 @@
   <div class="card-body" id="action-body" style="padding:14px 16px;"></div>
 </div>
 
+{% if role in ['admin', 'nachalnik', 'nachalnik_ktc'] %}
 <div class="card">
   <div class="card-header"><div class="card-title">Ремонтные участки</div></div>
   <div class="card-body">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <!-- ВРЦ -->
+    <div class="cex-grid">
+      {% if role in ['admin', 'nachalnik'] %}
       <div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">ВРЦ — Вагоноремонтный цех</div>
+        <div class="cex-label">ВРЦ — Вагоноремонтный цех</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <div class="uchastok"><b>🔧 Автосцепка</b><p>Дефектоскопия и ремонт автосцепного устройства</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Дефектоскопист</span><span class="badge badge-green">Мастер</span></div></div>
-          <div class="uchastok"><b>🔩 АКП</b><p>Ремонт буксовых узлов</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>🔧 Автосцепка</b><p>Дефектоскопия и ремонт автосцепного устройства</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>🔩 АКП</b><p>Ремонт буксовых узлов и приборов</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
           <div class="uchastok"><b>🏠 Кузов</b><p>Ремонт кузова и рамы вагона</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
         </div>
       </div>
-      <!-- КТЦ -->
+      {% endif %}
+      {% if role in ['admin', 'nachalnik_ktc'] %}
       <div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">КТЦ — Колёсно-тележечный цех</div>
+        <div class="cex-label">КТЦ — Колёсно-тележечный цех</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <div class="uchastok"><b>🏗 Тележечный</b><p>Ремонт тележек, подкатка колёсных пар</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>🏗 Тележечный</b><p>Ремонт тележек, подкатка КП</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
           <div class="uchastok"><b>⚙️ Колёсный</b><p>Приход и дефектоскопия КП</p><div class="t"><span class="badge badge-blue">Дефектоскопист</span></div></div>
-          <div class="uchastok"><b>🔄 Роликовый</b><p>Ремонт буксовых узлов и подшипников</p><div class="t"><span class="badge badge-green">Мастер роликовый</span></div></div>
+          <div class="uchastok"><b>🔄 Роликовый</b><p>Ремонт буксовых узлов</p><div class="t"><span class="badge badge-green">Мастер роликовый</span></div></div>
         </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </div>
 
+{% elif role == 'master' %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Мой участок · {{ uchastok_label }}</div></div>
+  <div class="card-body">
+    <div class="uchastok" style="background:var(--blue-50);border-color:var(--blue-200);">
+      {% if uchastok == 'avtoscepka' %}<b>🔧 Автосцепка</b><p>Ремонт автосцепного устройства, замков, тяговых хомутов и поглощающих аппаратов.</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Наряды</span></div>
+      {% elif uchastok == 'akp' %}<b>🔩 АКП</b><p>Авторегуляторы, авторежимы и приборы тормозного оборудования.</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Наряды</span></div>
+      {% elif uchastok == 'kuzov' %}<b>🏠 Кузов</b><p>Ремонт кузова, рамы, хребтовых и шкворневых балок.</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Наряды</span></div>
+      {% elif uchastok == 'telega' %}<b>🏗 Тележечный</b><p>Ремонт тележек, подкатка колёсных пар, натурный колёсный лист.</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Натурный лист</span></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% elif role == 'master_roller' %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Мой участок · Роликовый</div></div>
+  <div class="card-body">
+    <div class="uchastok" style="background:var(--blue-50);border-color:var(--blue-200);">
+      <b>🔄 Роликовый</b><p>Ремонт буксовых узлов и подшипников. Формирование колёсных пар.</p>
+      <div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Колёсные пары</span></div>
+    </div>
+  </div>
+</div>
+
+{% elif role == 'defektoskopist' %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Мои задачи</div></div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+      <div class="uchastok"><b>🔧 Автосцепка</b><p>Дефектоскопия деталей автосцепного устройства</p><div class="t"><span class="badge badge-amber">ОПЗС</span></div></div>
+      <div class="uchastok"><b>🏗 Тележечный</b><p>Дефектоскопия деталей тележки</p><div class="t"><span class="badge badge-amber">ОПЗС</span></div></div>
+      <div class="uchastok"><b>⚙️ Колёсный</b><p>Приход и дефектоскопия колёсных пар</p><div class="t"><span class="badge badge-blue">КП Приход / Выход</span></div></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <style>
 .stat-grid a{text-decoration:none;color:inherit}
+.cex-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cex-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
 .uchastok{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:15px;transition:var(--t)}
 .uchastok:hover{border-color:var(--blue-200);background:var(--blue-50);box-shadow:var(--shadow-sm)}
 .uchastok b{font-weight:700;font-size:15px}
@@ -69,38 +117,44 @@
 .action-row .ar-main{flex:1;min-width:0}
 .action-row .ar-main b{font-size:14px;display:block}
 .action-row .ar-main span{font-size:12px;color:var(--text-2)}
+@media(max-width:700px){.cex-grid{grid-template-columns:1fr}}
 </style>
 {% endblock %}
+
 {% block scripts %}
 <script>
 async function j(u){try{return await fetch(u).then(r=>r.json());}catch(e){return [];}}
 (async function(){
-  const [w,o,ka,kd,r,n,sk,tr]=await Promise.all([
-    j('/api/wagons'),j('/api/opzs'),j('/api/kp_arrival'),j('/api/kp_departure'),
-    j('/api/roller'),j('/api/nakatka'),j('/api/warehouse'),j('/api/transfers')]);
+  const [w,o,ka,kd,r,n,sk,tr,nar]=await Promise.all([
+    j('/api/wagons'),j('/api/opzs'),
+    j('/api/kp_arrival'),j('/api/kp_departure'),j('/api/roller'),
+    j('/api/nakatka'),j('/api/warehouse'),j('/api/transfers'),
+    j('/api/naryady')
+  ]);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('s-wagons',w.length);
-  set('s-opzs',o.filter(d=>d.status==='На утверждении'||d.status==='На доработке').length);
-  set('s-kp',ka.length+kd.length+r.length);
-  set('s-nak',n.length);
-  set('s-sklad',sk.length);
-  set('s-tr',tr.length);
+  set('s-wagons', Array.isArray(w)?w.length:0);
+  set('s-opzs',   Array.isArray(o)?o.filter(d=>d.status==='На утверждении'||d.status==='На доработке').length:0);
+  set('s-kp',     (Array.isArray(ka)?ka.length:0)+(Array.isArray(kd)?kd.length:0)+(Array.isArray(r)?r.length:0));
+  set('s-nak',    Array.isArray(n)?n.length:0);
+  set('s-sklad',  Array.isArray(sk)?sk.length:0);
+  set('s-tr',     Array.isArray(tr)?tr.length:0);
+  set('s-nar',    Array.isArray(nar)?nar.length:0);
 
-  // ---- Требуют вашего действия ----
   const role="{{ role }}", me="{{ username }}";
   const items=[];
-  if(role==='nachalnik'){
-    o.filter(d=>d.status==='На утверждении').forEach(d=>items.push({
+  if(role==='nachalnik' || role==='nachalnik_ktc' || role==='admin'){
+    (o||[]).filter(d=>d.status==='На утверждении').slice(0,8).forEach(d=>items.push({
       ic:'📋',bg:'var(--amber-bg)',title:`ОПЗС · Вагон ${d.wagon_number}`,
       sub:'Ожидает утверждения',href:`/opzs?doc=${d.id}`}));
   } else {
-    o.filter(d=>d.status==='На доработке').forEach(d=>items.push({
+    (o||[]).filter(d=>d.status==='На доработке').slice(0,8).forEach(d=>items.push({
       ic:'↩️',bg:'var(--red-bg)',title:`ОПЗС · Вагон ${d.wagon_number}`,
       sub:'Возвращён на доработку'+(d.comment?': '+d.comment:''),href:`/opzs?doc=${d.id}`}));
   }
-  tr.filter(t=>t.to_user===me && t.status==='Создана').forEach(t=>items.push({
-    ic:'🔁',bg:'var(--blue-50)',title:`Перемещение · ${t.item}`,
-    sub:`От: ${t.from_name} · ${t.qty} шт`,href:'/transfers'}));
+  (tr||[]).filter(t=>(t.to_user===me || ['nachalnik','nachalnik_ktc','admin'].includes(role)) && t.status==='Создана').slice(0,5).forEach(t=>{
+    const it=(t.items&&t.items[0])||{item:t.item,qty:t.qty};
+    items.push({ic:'🔁',bg:'var(--blue-50)',title:`Заявка · ${it.item}${(t.items||[]).length>1?` (+${t.items.length-1})`:''}`,sub:`От: ${t.from_name} · ${it.qty} шт`,href:'/transfers'});
+  });
 
   if(items.length){
     document.getElementById('action-count').textContent=items.length;
