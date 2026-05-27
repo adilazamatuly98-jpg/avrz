@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}Наряды — АВРЗ{% endblock %}
+{% block crumb %}Производство <span>/ Наряды</span>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Наряды <span>на выполнение работ</span></div>
+    <div class="page-sub">
+      {% if role == 'nachalnik_ktc' %}
+        Заполнение нарядов: Тележечный · Роликовый · Колёсный
+      {% elif role == 'nachalnik' %}
+        Заполнение нарядов: Автосцепка · АКП · Кузов
+      {% else %}
+        {{ uchastok_label }}
+      {% endif %}
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="openCreate()">＋ Новый наряд</button>
+</div>
+
+{% if role in ['nachalnik_ktc', 'nachalnik', 'admin'] %}
+<div class="tabs" id="tabs" style="margin-bottom:18px;">
+  {% if role == 'nachalnik_ktc' or role == 'admin' %}
+  <button class="tab active" data-uch="telega"   onclick="switchTab('telega')">🏗 Тележечный</button>
+  <button class="tab"        data-uch="roller"   onclick="switchTab('roller')">🔄 Роликовый</button>
+  <button class="tab"        data-uch="kolesny"  onclick="switchTab('kolesny')">⚙️ Колёсный</button>
+  {% endif %}
+  {% if role == 'nachalnik' or role == 'admin' %}
+  <button class="tab {% if role == 'nachalnik' %}active{% endif %}" data-uch="avtoscepka" onclick="switchTab('avtoscepka')">🔧 Автосцепка</button>
+  <button class="tab" data-uch="akp"   onclick="switchTab('akp')">🔩 АКП</button>
+  <button class="tab" data-uch="kuzov" onclick="switchTab('kuzov')">🏠 Кузов</button>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title" id="list-title">Наряды</div>
+    <div class="search-box"><span class="ic">🔍</span>
+      <input class="form-control" id="search" style="width:240px;" placeholder="Поиск…"></div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Участок</th><th>Дата</th><th>Смена</th><th>Бригада</th><th>Статус</th><th></th></tr></thead>
+      <tbody id="body"><tr class="row-empty"><td colspan="6">Загрузка…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ── Модальное окно наряда ── -->
+<div class="modal-overlay" id="m-nar">
+  <div class="modal modal-lg" style="max-width:860px;">
+    <div class="modal-header">
+      <div class="modal-title" id="nar-title">Наряд на выполнение работ</div>
+      <button class="btn-close" onclick="closeModal('m-nar')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Шапка -->
+      <div class="form-row form-row-3" style="margin-bottom:20px;">
+        <div class="form-group">
+          <label class="form-label">Участок</label>
+          <select class="form-control" id="n-uchastok">
+            <option value="avtoscepka">Автосцепка</option>
+            <option value="akp">АКП</option>
+            <option value="kuzov">Кузов</option>
+            <option value="telega">Тележечный</option>
+            <option value="roller">Роликовый</option>
+            <option value="kolesny">Колёсный</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Дата</label>
+          <input class="form-control" id="n-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Смена</label>
+          <select class="form-control" id="n-smena">
+            <option value="1">1 смена</option>
+            <option value="2">2 смена</option>
+            <option value="3">3 смена</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Таблица 1: Работы -->
+      <div class="section-label">
+        <span>🔨 Работы</span>
+        <button class="btn btn-secondary btn-sm" onclick="addRabota()">＋ Добавить строку</button>
+      </div>
+      <div class="tbl-wrap" style="margin-bottom:20px;">
+        <table id="t-raboty">
+          <thead><tr>
+            <th style="width:60%">Технологическая операция</th>
+            <th>Количество</th>
+            <th style="width:40px;"></th>
+          </tr></thead>
+          <tbody id="raboty-body"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Таблица 2: Состав бригады -->
+      <div class="section-label">
+        <span>👷 Состав бригады</span>
+        <button class="btn btn-secondary btn-sm" onclick="addBrigada()">＋ Добавить</button>
+      </div>
+      <div class="tbl-wrap">
+        <table id="t-brigada">
+          <thead><tr>
+            <th>ФИО</th>
+            <th style="width:120px;">КТУ</th>
+            <th style="width:40px;"></th>
+          </tr></thead>
+          <tbody id="brigada-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('m-nar')">Закрыть</button>
+      <button class="btn btn-secondary" onclick="saveNar('Черновик')">💾 Записать</button>
+      <button class="btn btn-primary"   onclick="saveNar('Проведён')">➤ Провести</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.tbl-wrap table input.form-control{
+  padding:6px 8px;font-size:13px;border-radius:6px;
+}
+.tbl-wrap table input[type=number]{width:90px}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ROLE = "{{ role }}";
+const MY_UCH = "{{ uchastok }}";
+
+const UCH_LABELS = {
+  avtoscepka:'Автосцепка', akp:'АКП', kuzov:'Кузов',
+  telega:'Тележечный', roller:'Роликовый', kolesny:'Колёсный'
+};
+
+let all = [], curTab = '', curId = null;
+let raboty = [], brigada = [];
+
+// Определяем начальный таб
+function initTab(){
+  if(ROLE === 'nachalnik_ktc') curTab='telega';
+  else if(ROLE === 'nachalnik') curTab='avtoscepka';
+  else if(ROLE === 'admin') curTab='telega';
+  else curTab = MY_UCH;
+}
+
+function statusBadge(s){
+  return `<span class="badge ${s==='Проведён'?'badge-green':'badge-gray'}">${s==='Проведён'?'✓':'✎'} ${esc(s||'Черновик')}</span>`;
+}
+
+async function load(){
+  const qs = curTab ? `?uchastok=${curTab}` : '';
+  all = await fetch('/api/naryady' + qs).then(r=>r.json());
+  render(all);
+}
+
+function switchTab(uch){
+  curTab = uch;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.uch===uch));
+  document.getElementById('list-title').textContent = `Наряды · ${UCH_LABELS[uch]||uch}`;
+  load();
+}
+
+function render(list){
+  const b = document.getElementById('body');
+  if(!list.length){
+    b.innerHTML='<tr class="row-empty"><td colspan="6"><span class="empty-hint"><span class="em">📝</span>Нарядов нет</span></td></tr>';
+    return;
+  }
+  b.innerHTML = list.map(d=>`<tr>
+    <td><span class="badge badge-blue">${esc(UCH_LABELS[d.uchastok]||d.uchastok)}</span></td>
+    <td class="text-mono">${esc(d.date||'—')}</td>
+    <td class="text-muted">${d.smena} смена</td>
+    <td class="text-muted">${(d.brigada||[]).length} чел.</td>
+    <td>${statusBadge(d.status)}</td>
+    <td><div class="flex gap-2">
+      <button class="btn btn-secondary btn-xs" onclick="openDoc(${d.id})">✎ Открыть</button>
+      <button class="btn btn-danger btn-xs" onclick="delDoc(${d.id})">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+wireSearch('search', ()=>all, render);
+
+// ── Рендер таблицы Работы ──
+function renderRaboty(){
+  document.getElementById('raboty-body').innerHTML = raboty.map((r,i)=>`<tr>
+    <td><input class="form-control" value="${esc(r.op)}"
+      oninput="raboty[${i}].op=this.value" style="width:100%;"></td>
+    <td><input class="form-control" type="number" value="${r.qty}"
+      oninput="raboty[${i}].qty=parseFloat(this.value)||0" min="0" step="1"></td>
+    <td><button class="btn btn-danger btn-xs" onclick="rmRabota(${i})">✕</button></td>
+  </tr>`).join('') || '<tr class="row-empty"><td colspan="3">Добавьте работы</td></tr>';
+}
+function addRabota(){ raboty.push({op:'',qty:0}); renderRaboty(); }
+function rmRabota(i){ raboty.splice(i,1); renderRaboty(); }
+
+// ── Рендер таблицы Бригада ──
+function renderBrigada(){
+  document.getElementById('brigada-body').innerHTML = brigada.map((b,i)=>`<tr>
+    <td><input class="form-control" value="${esc(b.fio)}"
+      oninput="brigada[${i}].fio=this.value" style="width:100%;"></td>
+    <td><input class="form-control" type="number" value="${b.ktu}"
+      oninput="brigada[${i}].ktu=parseFloat(this.value)||0" min="0" max="2" step="0.1" style="width:90px;"></td>
+    <td><button class="btn btn-danger btn-xs" onclick="rmBrigada(${i})">✕</button></td>
+  </tr>`).join('') || '<tr class="row-empty"><td colspan="3">Добавьте состав бригады</td></tr>';
+}
+function addBrigada(){ brigada.push({fio:'',ktu:1.0}); renderBrigada(); }
+function rmBrigada(i){ brigada.splice(i,1); renderBrigada(); }
+
+// ── Открыть форму создания ──
+async function openCreate(){
+  curId = null;
+  document.getElementById('nar-title').textContent = 'Новый наряд';
+  document.getElementById('n-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('n-smena').value = '1';
+  // Автозаполнение участка
+  const sel = document.getElementById('n-uchastok');
+  if(MY_UCH && MY_UCH !== 'None') sel.value = MY_UCH;
+  else if(curTab) sel.value = curTab;
+  // Загрузить дефолтные значения
+  const def = await fetch('/api/naryady_defaults').then(r=>r.json());
+  raboty  = def.raboty.map(x=>({...x}));
+  brigada = def.brigada.map(x=>({...x}));
+  renderRaboty(); renderBrigada();
+  openModal('m-nar');
+}
+
+// ── Открыть существующий ──
+async function openDoc(id){
+  const doc = await fetch('/api/naryady/'+id).then(r=>r.json());
+  curId = id;
+  document.getElementById('nar-title').textContent = `Наряд · ${UCH_LABELS[doc.uchastok]||doc.uchastok} · ${doc.date||''}`;
+  document.getElementById('n-uchastok').value = doc.uchastok || '';
+  document.getElementById('n-date').value     = (doc.date||'').split('T')[0];
+  document.getElementById('n-smena').value    = doc.smena || 1;
+  raboty  = (doc.raboty  || []).map(x=>({...x}));
+  brigada = (doc.brigada || []).map(x=>({...x}));
+  renderRaboty(); renderBrigada();
+  openModal('m-nar');
+}
+
+// ── Сохранить ──
+async function saveNar(status){
+  const uch = document.getElementById('n-uchastok').value;
+  if(!uch){ toast('Выберите участок','err'); return; }
+  const payload = {
+    uchastok: uch,
+    date:     document.getElementById('n-date').value,
+    smena:    parseInt(document.getElementById('n-smena').value)||1,
+    raboty, brigada, status,
+  };
+  let r;
+  if(curId){
+    r = await fetch('/api/naryady/'+curId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  } else {
+    r = await fetch('/api/naryady', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  }
+  const d = await r.json();
+  if(!d.ok){ toast('Ошибка сохранения','err'); return; }
+  toast(status==='Проведён'?'Наряд проведён':'Черновик записан');
+  closeModal('m-nar'); load();
+}
+
+// ── Удалить ──
+async function delDoc(id){
+  if(!confirm('Удалить наряд?')) return;
+  await fetch('/api/naryady/'+id, {method:'DELETE'});
+  toast('Удалено'); load();
+}
+
+// ── Init ──
+initTab();
+// Активировать первый таб если есть табы
+const firstTab = document.querySelector('.tab');
+if(firstTab && curTab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.uch===curTab));
+}
+load();
+</script>
+{% endblock %}
