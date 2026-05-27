@@ -308,29 +308,43 @@ body.sidebar-hidden .sb-arrow svg{
 
       <div class="nav-sec">Производство</div>
 
-      {# Вагоны — все кроме роли admin-only #}
+      {# Вагоны — все пользователи #}
       {% if role in ['nachalnik', 'nachalnik_ktc', 'master', 'master_roller', 'defektoskopist', 'admin'] %}
       <a class="nav-link" href="/wagons"><span class="ic">🚃</span><span class="nav-txt"> Вагоны</span></a>
       {% endif %}
 
-      {# ОПЗС — Деф ВРЦ, все мастера, мастер роликовый, начальник #}
-      {% if role in ['nachalnik', 'admin', 'master', 'master_roller'] or
-           (role == 'defektoskopist' and uchastok in ['vrc_def','wagon_def']) %}
+      {# ОПЗС:
+         - nachalnik (ВРЦ): все ВРЦ участки
+         - nachalnik_ktc (КТЦ): КТЦ участки
+         - мастера всех участков
+         - master_roller
+         - defektoskopist: Авт+Тел #}
+      {% if role in ['nachalnik', 'nachalnik_ktc', 'admin', 'master', 'master_roller', 'defektoskopist'] %}
       <a class="nav-link" href="/opzs"><span class="ic">📋</span><span class="nav-txt"> ОПЗС <span class="nav-badge" id="nav-opzs-badge" style="display:none;"></span></span></a>
       {% endif %}
 
-      {# КП — Деф КТЦ (Приход/Выход) + Мастер роликовый (Роликовый) + Начальник #}
-      {% if role in ['nachalnik', 'admin', 'master_roller'] or
-           (role == 'defektoskopist' and uchastok == 'kolesny') %}
+      {# Колёсные пары:
+         - nachalnik_ktc (КТЦ): видит всё
+         - defektoskopist: Приход/Выход
+         - master_roller: Роликовый
+         - НЕ nachalnik (ВРЦ) #}
+      {% if role in ['nachalnik_ktc', 'admin', 'master_roller', 'defektoskopist'] %}
       <a class="nav-link" href="/kp"><span class="ic">⚙️</span><span class="nav-txt"> Колёсные пары</span></a>
       {% endif %}
 
-      {# Натурный лист — только Мастер тележечного + Начальник #}
-      {% if role in ['nachalnik', 'nachalnik_ktc', 'admin'] or (role == 'master' and uchastok == 'telega') %}
+      {# Натурный колёсный лист:
+         - nachalnik_ktc (КТЦ)
+         - master_telega
+         - НЕ nachalnik (ВРЦ) #}
+      {% if role in ['nachalnik_ktc', 'admin'] or (role == 'master' and uchastok == 'telega') %}
       <a class="nav-link" href="/nakatka"><span class="ic">📄</span><span class="nav-txt"> Натурный колёсный лист</span></a>
       {% endif %}
 
-      {# Наряды — ВРЦ мастера (Автосцепка, АКП, Кузов) + начальники #}
+      {# Наряды:
+         - nachalnik (ВРЦ): за Авт/АКП/Кузов мастеров
+         - nachalnik_ktc (КТЦ): за Тел/Рол/Кол мастеров
+         - мастера ВРЦ: за себя
+         - НЕ мастера КТЦ (за них заполняет nachalnik_ktc) #}
       {% if role in ['nachalnik', 'nachalnik_ktc', 'admin'] or
            (role == 'master' and uchastok in ['avtoscepka', 'akp', 'kuzov']) %}
       <a class="nav-link" href="/naryady"><span class="ic">📝</span><span class="nav-txt"> Наряды</span></a>
