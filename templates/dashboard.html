@@ -17,11 +17,11 @@
   {% if role in ['nachalnik','defektoskopist','master_roller'] %}
   <a href="/kp"><div class="stat"><div class="ico">⚙️</div><div class="val" id="s-kp">—</div><div class="lbl">Колёсные пары</div><div class="desc">документов</div></div></a>
   {% endif %}
-  {% if role in ['nachalnik','master'] %}
-  <a href="/nakatka"><div class="stat"><div class="ico">📄</div><div class="val" id="s-nak">—</div><div class="lbl">Натурные листы</div><div class="desc">создано</div></div></a>
+  {% if role in ['nachalnik','master'] and uchastok in ['telega', None, ''] %}
+  <a href="/nakatka"><div class="stat"><div class="ico">📄</div><div class="val" id="s-nak">—</div><div class="lbl">Натурный колёсный лист</div><div class="desc">создано</div></div></a>
   {% endif %}
   <a href="/sklad"><div class="stat"><div class="ico">📦</div><div class="val" id="s-sklad">—</div><div class="lbl">Мой склад</div><div class="desc">позиций</div></div></a>
-  <a href="/transfers"><div class="stat"><div class="ico">🔁</div><div class="val" id="s-tr">—</div><div class="lbl">Перемещения</div><div class="desc">заявок</div></div></a>
+  <a href="/transfers"><div class="stat"><div class="ico">🔁</div><div class="val" id="s-tr">—</div><div class="lbl">Заявки на получение</div><div class="desc">заявок</div></div></a>
 </div>
 
 <div class="card" id="action-card" style="margin-bottom:22px;display:none;">
@@ -30,14 +30,27 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><div class="card-title">Участки цеха</div></div>
+  <div class="card-header"><div class="card-title">Ремонтные участки</div></div>
   <div class="card-body">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
-      <div class="uchastok"><b>🔧 Автосцепка</b><p>Дефектоскопия и ремонт автосцепного устройства</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Дефектоскопист</span><span class="badge badge-green">Мастер</span></div></div>
-      <div class="uchastok"><b>🏗 Тележечный</b><p>Ремонт тележек, подкатка колёсных пар</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
-      <div class="uchastok"><b>🔩 АКП</b><p>Ремонт буксовых узлов</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
-      <div class="uchastok"><b>⚙️ Колёсный</b><p>Приход и дефектоскопия КП</p><div class="t"><span class="badge badge-blue">Дефектоскопист</span></div></div>
-      <div class="uchastok"><b>🔄 Роликовый</b><p>Ремонт буксовых узлов и подшипников</p><div class="t"><span class="badge badge-green">Мастер роликовый</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- ВРЦ -->
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">ВРЦ — Вагоноремонтный цех</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="uchastok"><b>🔧 Автосцепка</b><p>Дефектоскопия и ремонт автосцепного устройства</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-blue">Дефектоскопист</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>🔩 АКП</b><p>Ремонт буксовых узлов</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>🏠 Кузов</b><p>Ремонт кузова и рамы вагона</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+        </div>
+      </div>
+      <!-- КТЦ -->
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">КТЦ — Колёсно-тележечный цех</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="uchastok"><b>🏗 Тележечный</b><p>Ремонт тележек, подкатка колёсных пар</p><div class="t"><span class="badge badge-amber">ОПЗС</span><span class="badge badge-green">Мастер</span></div></div>
+          <div class="uchastok"><b>⚙️ Колёсный</b><p>Приход и дефектоскопия КП</p><div class="t"><span class="badge badge-blue">Дефектоскопист</span></div></div>
+          <div class="uchastok"><b>🔄 Роликовый</b><p>Ремонт буксовых узлов и подшипников</p><div class="t"><span class="badge badge-green">Мастер роликовый</span></div></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
