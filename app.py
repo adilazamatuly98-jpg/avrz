@@ -831,7 +831,7 @@ def api_transfers():
     db    = load_db()
     u     = current_user()
     items = db["transfers"]
-    if u["role"] != "nachalnik":
+    if u["role"] not in ("nachalnik", "admin"):
         items = [t for t in items
                  if t.get("from_user") == u["username"] or t.get("to_user") == u["username"]]
     return jsonify(items)
@@ -843,17 +843,21 @@ def api_transfers_create():
     data = request.get_json(force=True) or {}
     db   = load_db()
     _id  = next_id(db, "transfers")
+    # Support both old peer-to-peer and new request-from-warehouse mode
+    from_source = data.get("from_source", "")  # e.g. sklad_metal
+    to_user = data.get("to_user") or current_user()["username"]
     rec  = {
-        "id":         _id,
-        "from_user":  current_user()["username"],
-        "from_name":  current_user()["name"],
-        "to_user":    data.get("to_user", ""),
-        "to_name":    USERS.get(data.get("to_user", ""), {}).get("name", data.get("to_user", "")),
-        "item":       data.get("item", ""),
-        "qty":        int(data.get("qty") or 0),
-        "note":       data.get("note", ""),
-        "status":     "Создана",
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "id":          _id,
+        "from_user":   current_user()["username"],
+        "from_name":   current_user()["name"],
+        "from_source": from_source,  # warehouse source (new mode)
+        "to_user":     to_user,
+        "to_name":     USERS.get(to_user, {}).get("name", to_user),
+        "item":        data.get("item", ""),
+        "qty":         int(data.get("qty") or 0),
+        "note":        data.get("note", ""),
+        "status":      "Создана",
+        "created_at":  datetime.now().isoformat(timespec="seconds"),
     }
     db["transfers"].append(rec)
     save_db(db)
@@ -870,7 +874,7 @@ def api_transfers_action(tid):
     if not rec:
         return jsonify({"error": "not found"}), 404
     u = current_user()
-    if u["role"] != "nachalnik" and rec.get("to_user") != u["username"]:
+    if u["role"] not in ("nachalnik", "admin") and rec.get("to_user") != u["username"]:
         return jsonify({"error": "forbidden"}), 403
     if rec["status"] != "Создана":
         return jsonify({"error": "already processed"}), 400
