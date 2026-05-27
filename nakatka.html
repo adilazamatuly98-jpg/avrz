@@ -1,263 +1,196 @@
 {% extends "base.html" %}
-{% block title %}Натурный лист — АРМ Ремонт{% endblock %}
+{% block title %}Натурный лист — АВРЗ{% endblock %}
+{% block crumb %}Производство <span>/ Натурный лист</span>{% endblock %}
 {% block content %}
-<div class="page">
-  <div class="page-header">
-    <div class="page-title">Натурный <span>колёсный лист</span></div>
-    <button class="btn btn-primary" onclick="openCreateModal()">＋ Новый документ</button>
-  </div>
+<div class="page-header">
+  <div><div class="page-title">Натурный <span>колёсный лист</span></div>
+  <div class="page-sub">Тележечный натурный лист колёсных пар</div></div>
+  <button class="btn btn-primary" onclick="openCreate()">＋ Новый лист</button>
+</div>
 
-  <div class="card">
-    <div class="card-header"><div class="card-title">Реестр натурных листов</div></div>
-    <div class="card-body" style="padding:0;">
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Реестр натурных листов</div>
+    <div class="search-box"><span class="ic">🔍</span><input class="form-control" id="search" style="width:240px;" placeholder="Поиск по всем полям…"></div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Вагон №</th><th>Тележка №</th><th>Контрагент</th><th>Ремонт</th><th>КП</th><th>Статус</th><th>Создан</th></tr></thead>
+        <tbody id="body"><tr class="row-empty"><td colspan="7">Загрузка…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Doc modal -->
+<div class="modal-overlay" id="m-nak">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title" id="nak-title">Натурный лист</div><button class="btn-close" onclick="closeModal('m-nak')">✕</button></div>
+    <div class="modal-body">
+      <div class="section-label">📌 Реквизиты вагона</div>
+      <div class="form-row form-row-3" style="margin-bottom:18px;">
+        <div class="form-group"><label class="form-label">Номер вагона</label><input class="form-control" id="nk-vagon"></div>
+        <div class="form-group"><label class="form-label">Номер тележки</label><input class="form-control" id="nk-telega"></div>
+        <div class="form-group"><label class="form-label">Тип вагона</label><input class="form-control" id="nk-vtype"></div>
+        <div class="form-group"><label class="form-label">Контрагент</label><input class="form-control" id="nk-kontr"></div>
+        <div class="form-group"><label class="form-label">Вид ремонта</label>
+          <select class="form-control" id="nk-remont"><option>ТР-1</option><option>ТР-2</option><option>СР</option><option>КР</option><option>КРП</option></select></div>
+      </div>
+      <hr class="divider">
+      <div class="section-label"><span>⚙️ Колёсные пары на вагоне</span>
+        <button class="btn btn-secondary btn-sm" onclick="openAddKP()">＋ Добавить КП</button></div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Вагон №</th><th>Тележка №</th><th>Контрагент</th><th>Вид ремонта</th><th>КП</th><th>Создан</th><th></th></tr></thead>
-          <tbody id="nakatka-list">
-            <tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px;">Загрузка...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Create/View Nakatka -->
-<div class="modal-overlay" id="modal-nakatka">
-  <div class="modal modal-lg" style="max-width:1100px;">
-    <div class="modal-header">
-      <div class="modal-title" id="nak-modal-title">Натурный колёсный лист</div>
-      <button class="btn-close" onclick="closeModal('modal-nakatka')">✕</button>
-    </div>
-    <div class="modal-body">
-      <!-- Header fields -->
-      <div class="section-label">Реквизиты вагона</div>
-      <div class="form-row form-row-3" style="margin-bottom:16px;">
-        <div class="form-group"><label class="form-label">Номер вагона</label><input class="form-control" id="nak-vagon-num"></div>
-        <div class="form-group"><label class="form-label">Номер тележки</label><input class="form-control" id="nak-telega-num"></div>
-        <div class="form-group"><label class="form-label">Тип вагона</label><input class="form-control" id="nak-vagon-type"></div>
-        <div class="form-group"><label class="form-label">Контрагент</label><input class="form-control" id="nak-kontragent"></div>
-        <div class="form-group"><label class="form-label">Вид ремонта</label>
-          <select class="form-control" id="nak-remont">
-            <option>ТР-1</option><option>ТР-2</option><option>СР</option><option>КР</option><option>КРП</option>
-          </select>
-        </div>
-      </div>
-
-      <hr class="divider">
-      <div class="section-label" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>Колёсные пары — установленные на вагон</span>
-        <button class="btn btn-secondary btn-sm" onclick="openAddNKPRow()">＋ Добавить КП</button>
-      </div>
-      <div class="tbl-wrap">
-        <table id="nak-kp-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Номер КП</th>
-              <th>Год</th>
-              <th>Завод</th>
-              <th>Установлено</th>
-              <th>Происхождение</th>
-              <th>Вх. номер</th>
-              <th>Тип КП</th>
-              <th>М/Г форм.</th>
-              <th>Пункт форм.</th>
-              <th>Код собств.</th>
-              <th>Код освид.</th>
-              <th>М/Г освид.</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="tbl-nak-kp"></tbody>
+          <thead><tr><th>#</th><th>Номер КП</th><th>Год</th><th>Завод</th><th>Установлено</th><th>Происх.</th><th>Тип</th><th>Формиров.</th><th>Освид.</th><th></th></tr></thead>
+          <tbody id="kp-body"></tbody>
         </table>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-nakatka')">Закрыть</button>
-      <button class="btn btn-primary" onclick="saveNakatka()">💾 Сохранить</button>
+      <button class="btn btn-secondary" onclick="closeModal('m-nak')">Закрыть</button>
+      <button class="btn btn-secondary" onclick="saveNak('Черновик')">💾 Записать</button>
+      <button class="btn btn-primary" onclick="saveNak('Проведён')">➤ Провести</button>
     </div>
   </div>
 </div>
 
-<!-- Modal: Add KP row to nakatka -->
-<div class="modal-overlay" id="modal-nak-kp">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Добавить колёсную пару</div>
-      <button class="btn-close" onclick="closeModal('modal-nak-kp')">✕</button>
-    </div>
+<!-- Add KP modal -->
+<div class="modal-overlay" id="m-kp">
+  <div class="modal modal-lg" style="max-width:720px;">
+    <div class="modal-header"><div class="modal-title">Добавить колёсную пару</div><button class="btn-close" onclick="closeModal('m-kp')">✕</button></div>
     <div class="modal-body">
       <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Номер КП</label><input class="form-control" id="nkp-num"></div>
-        <div class="form-group"><label class="form-label">Год изготовления</label><input class="form-control" id="nkp-god" type="number"></div>
+        <div class="form-group"><label class="form-label">Номер КП</label><input class="form-control" id="kp-num"></div>
+        <div class="form-group"><label class="form-label">Год изготовления</label><select class="form-control" id="kp-god"></select></div>
         <div class="form-group"><label class="form-label">Завод-изготовитель</label>
-          <select class="form-control" id="nkp-zavod"><option value="">— выберите —</option>
-            <option>НКМЗ</option><option>ВМЗ</option><option>УКВЗ</option><option>УЗТМ</option><option>ФАНПАС</option><option>СКТБ</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="form-label">Дата установки</label><input class="form-control" id="nkp-ustanovleno" type="date"></div>
-        <div class="form-group"><label class="form-label">Происхождение КП</label>
-          <select class="form-control" id="nkp-proish">
-            <option>Новая</option><option>После ремонта</option><option>Переставная</option><option>Прочее</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="form-label">Входящий номер</label><input class="form-control" id="nkp-vhod"></div>
+          <select class="form-control" id="kp-zavod"><option value="">— выберите —</option><option>НКМЗ</option><option>ВМЗ</option><option>УКВЗ</option><option>УЗТМ</option><option>ФАНПАС</option><option>СКТБ</option></select></div>
+        <div class="form-group"><label class="form-label">Дата установки</label><input class="form-control" id="kp-ust" type="date"></div>
+        <div class="form-group"><label class="form-label">Происхождение</label>
+          <select class="form-control" id="kp-proish"><option>Новая</option><option>После ремонта</option><option>Переставная</option><option>Прочее</option></select></div>
+        <div class="form-group"><label class="form-label">Входящий номер</label><input class="form-control" id="kp-vhod"></div>
         <div class="form-group"><label class="form-label">Тип КП</label>
-          <select class="form-control" id="nkp-tip">
-            <option>РУ1-950</option><option>РУ1Ш-950</option><option>РВ2Ш-957</option><option>РВ3Ш-957</option>
-          </select>
-        </div>
+          <select class="form-control" id="kp-tip"><option>РУ1-950</option><option>РУ1Ш-950</option><option>РВ2Ш-957</option><option>РВ3Ш-957</option></select></div>
+        <div class="form-group"><label class="form-label">Пункт формирования</label><input class="form-control" id="kp-punkt"></div>
       </div>
       <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Месяц и год формирования</label><input class="form-control" id="nkp-mg-form" placeholder="мм.гггг"></div>
-        <div class="form-group"><label class="form-label">Пункт формирования</label><input class="form-control" id="nkp-punkt-form"></div>
-        <div class="form-group"><label class="form-label">Код собственника</label><input class="form-control" id="nkp-kod-sobst"></div>
-        <div class="form-group"><label class="form-label">Код освидетеля</label><input class="form-control" id="nkp-kod-osvid"></div>
-        <div class="form-group"><label class="form-label">Месяц и год освидетельства</label><input class="form-control" id="nkp-mg-osvid" placeholder="мм.гггг"></div>
+        <div class="form-group"><label class="form-label">Месяц/год формирования</label><div id="mg-form-wrap"></div></div>
+        <div class="form-group"><label class="form-label">Месяц/год освидетельствования</label><div id="mg-osvid-wrap"></div></div>
+        <div class="form-group"><label class="form-label">Код собственника</label><input class="form-control" id="kp-sobst"></div>
+        <div class="form-group"><label class="form-label">Код освидетеля</label><input class="form-control" id="kp-osvid"></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-nak-kp')">Отмена</button>
-      <button class="btn btn-primary" onclick="commitNKP()">Добавить КП</button>
+      <button class="btn btn-secondary" onclick="closeModal('m-kp')">Отмена</button>
+      <button class="btn btn-primary" onclick="commitKP()">Добавить КП</button>
     </div>
   </div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-let allNakatka = [];
-let currentNakDoc = null;
-let editingNakId = null;
+let all=[], cur=null, editId=null;
 
-async function load() {
-  allNakatka = await fetch('/api/nakatka').then(r=>r.json());
-  renderList();
-}
+function statusBadge(s){return `<span class="badge ${s==='Проведён'?'badge-green':'badge-gray'}">${s==='Проведён'?'✓':'✎'} ${esc(s||'Черновик')}</span>`;}
+function fmtMY(s){if(!s)return '—';const p=String(s).split('T')[0].split('-');return p.length>=2?`${p[1]}.${p[0]}`:s;}
 
-function renderList() {
-  const tbody = document.getElementById('nakatka-list');
-  if (!allNakatka.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px;">Документов нет</td></tr>'; return; }
-  tbody.innerHTML = allNakatka.map(d=>`<tr>
-    <td class="text-mono font-bold">#${d.id}</td>
-    <td class="text-mono">${d.wagon_number||'—'}</td>
-    <td class="text-mono">${d.telega_number||'—'}</td>
-    <td>${d.kontragent||'—'}</td>
-    <td><span class="badge badge-warn">${d.remont_type||'—'}</span></td>
-    <td><span class="badge badge-open">${(d.kp_rows||[]).length} КП</span></td>
-    <td class="text-muted" style="font-size:12px;">${d.created_at?.split('T')[0]||''}</td>
-    <td><button class="btn btn-secondary btn-sm" onclick="openDoc('${d.id}')">Открыть</button></td>
+async function load(){all=await fetch('/api/nakatka').then(r=>r.json());render(all);}
+function render(list){
+  const b=document.getElementById('body');
+  if(!list.length){b.innerHTML='<tr class="row-empty"><td colspan="7">Документов нет</td></tr>';return;}
+  b.innerHTML=list.map(d=>`<tr class="clickable" onclick="openDoc(${d.id})">
+    <td class="font-bold text-mono">${esc(d.wagon_number)||'—'}</td>
+    <td class="text-mono">${esc(d.telega_number)||'—'}</td>
+    <td>${esc(d.kontragent)||'—'}</td>
+    <td><span class="badge badge-amber">${esc(d.remont_type)||'—'}</span></td>
+    <td><span class="badge badge-blue">${(d.kp_rows||[]).length} КП</span></td>
+    <td>${statusBadge(d.status)}</td>
+    <td class="text-muted">${fmtDate(d.created_at)}</td>
   </tr>`).join('');
 }
+wireSearch('search',()=>all,render);
 
-function openCreateModal() {
-  currentNakDoc = null; editingNakId = null;
-  clearNakForm();
-  document.getElementById('nak-modal-title').textContent = 'Новый натурный лист';
-  document.getElementById('nak-ustanovleno').value = new Date().toISOString().split('T')[0];
-  renderNKPTable([]);
-  document.getElementById('modal-nakatka').classList.add('show');
+function openCreate(){
+  cur={kp_rows:[]};editId=null;
+  document.getElementById('nak-title').textContent='Новый натурный лист';
+  ['nk-vagon','nk-telega','nk-vtype','nk-kontr'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nk-remont').value='ТР-1';
+  renderKP();openModal('m-nak');
 }
-
-function clearNakForm() {
-  ['nak-vagon-num','nak-telega-num','nak-vagon-type','nak-kontragent'].forEach(id=>{
-    const el = document.getElementById(id); if(el) el.value='';
-  });
+async function openDoc(id){
+  cur=await fetch('/api/nakatka/'+id).then(r=>r.json());editId=id;
+  document.getElementById('nak-title').textContent=`Натурный лист · Вагон ${cur.wagon_number||'?'}`;
+  document.getElementById('nk-vagon').value=cur.wagon_number||'';
+  document.getElementById('nk-telega').value=cur.telega_number||'';
+  document.getElementById('nk-vtype').value=cur.vagon_type||'';
+  document.getElementById('nk-kontr').value=cur.kontragent||'';
+  document.getElementById('nk-remont').value=cur.remont_type||'ТР-1';
+  renderKP();openModal('m-nak');
 }
-
-async function openDoc(id) {
-  const doc = await fetch(`/api/nakatka/${id}`).then(r=>r.json());
-  currentNakDoc = doc; editingNakId = id;
-  document.getElementById('nak-modal-title').textContent = `Натурный лист #${id} — Вагон ${doc.wagon_number||'?'}`;
-  document.getElementById('nak-vagon-num').value = doc.wagon_number||'';
-  document.getElementById('nak-telega-num').value = doc.telega_number||'';
-  document.getElementById('nak-vagon-type').value = doc.vagon_type||'';
-  document.getElementById('nak-kontragent').value = doc.kontragent||'';
-  document.getElementById('nak-remont').value = doc.remont_type||'ТР-1';
-  renderNKPTable(doc.kp_rows||[]);
-  document.getElementById('modal-nakatka').classList.add('show');
-}
-
-function renderNKPTable(rows) {
-  if (!currentNakDoc) currentNakDoc = { kp_rows: [] };
-  currentNakDoc.kp_rows = rows;
-  document.getElementById('tbl-nak-kp').innerHTML = rows.map((r,i)=>`<tr>
+function renderKP(){
+  if(!cur.kp_rows)cur.kp_rows=[];
+  const b=document.getElementById('kp-body');
+  if(!cur.kp_rows.length){b.innerHTML='<tr class="row-empty"><td colspan="10">Добавьте колёсные пары</td></tr>';return;}
+  b.innerHTML=cur.kp_rows.map((r,i)=>`<tr>
     <td class="text-muted">${i+1}</td>
-    <td class="text-mono font-bold">${r.num||''}</td>
-    <td>${r.god||''}</td>
-    <td>${r.zavod||''}</td>
-    <td>${r.ustanovleno||''}</td>
-    <td><span class="badge badge-open" style="font-size:10px;">${r.proish||''}</span></td>
-    <td class="text-mono">${r.vhod||''}</td>
-    <td><span class="badge badge-warn" style="font-size:10px;">${r.tip||''}</span></td>
-    <td class="text-mono">${r.mg_form||''}</td>
-    <td>${r.punkt_form||''}</td>
-    <td class="text-mono">${r.kod_sobst||''}</td>
-    <td class="text-mono">${r.kod_osvid||''}</td>
-    <td class="text-mono">${r.mg_osvid||''}</td>
-    <td><button class="btn btn-danger btn-xs" onclick="removeNKP(${i})">✕</button></td>
-  </tr>`).join('') || '<tr><td colspan="14" class="text-muted" style="text-align:center;padding:16px;">Добавьте колёсные пары</td></tr>';
+    <td class="font-bold text-mono">${esc(r.num)}</td>
+    <td>${esc(r.god)}</td>
+    <td>${esc(r.zavod)}</td>
+    <td>${fmtDate(r.ustanovleno)}</td>
+    <td><span class="badge badge-gray" style="font-size:10px;">${esc(r.proish)}</span></td>
+    <td><span class="badge badge-blue" style="font-size:10px;">${esc(r.tip)}</span></td>
+    <td class="text-mono">${fmtMY(r.mg_form)}</td>
+    <td class="text-mono">${fmtMY(r.mg_osvid)}</td>
+    <td><button class="btn btn-danger btn-xs" onclick="rmKP(${i})">✕</button></td>
+  </tr>`).join('');
 }
-
-function openAddNKPRow() {
-  document.getElementById('nkp-ustanovleno').value = new Date().toISOString().split('T')[0];
-  document.getElementById('modal-nak-kp').classList.add('show');
+function openAddKP(){
+  document.getElementById('kp-ust').value=new Date().toISOString().split('T')[0];
+  document.getElementById('mg-form-wrap').innerHTML=monthYearSelect('mf-m','mf-y');
+  document.getElementById('mg-osvid-wrap').innerHTML=monthYearSelect('mo-m','mo-y');
+  ['kp-num','kp-vhod','kp-punkt','kp-sobst','kp-osvid'].forEach(id=>document.getElementById(id).value='');
+  fillYears('kp-god','');
+  openModal('m-kp');
 }
-
-function commitNKP() {
-  const row = {
-    num: document.getElementById('nkp-num').value,
-    god: document.getElementById('nkp-god').value,
-    zavod: document.getElementById('nkp-zavod').value,
-    ustanovleno: document.getElementById('nkp-ustanovleno').value,
-    proish: document.getElementById('nkp-proish').value,
-    vhod: document.getElementById('nkp-vhod').value,
-    tip: document.getElementById('nkp-tip').value,
-    mg_form: document.getElementById('nkp-mg-form').value,
-    punkt_form: document.getElementById('nkp-punkt-form').value,
-    kod_sobst: document.getElementById('nkp-kod-sobst').value,
-    kod_osvid: document.getElementById('nkp-kod-osvid').value,
-    mg_osvid: document.getElementById('nkp-mg-osvid').value,
+function commitKP(){
+  const row={
+    num:document.getElementById('kp-num').value,
+    god:document.getElementById('kp-god').value,
+    zavod:document.getElementById('kp-zavod').value,
+    ustanovleno:document.getElementById('kp-ust').value,
+    proish:document.getElementById('kp-proish').value,
+    vhod:document.getElementById('kp-vhod').value,
+    tip:document.getElementById('kp-tip').value,
+    punkt_form:document.getElementById('kp-punkt').value,
+    kod_sobst:document.getElementById('kp-sobst').value,
+    kod_osvid:document.getElementById('kp-osvid').value,
+    // день = 1 автоматически
+    mg_form:monthYearToDate(document.getElementById('mf-m').value,document.getElementById('mf-y').value),
+    mg_osvid:monthYearToDate(document.getElementById('mo-m').value,document.getElementById('mo-y').value),
   };
-  if (!currentNakDoc) currentNakDoc = { kp_rows: [] };
-  if (!currentNakDoc.kp_rows) currentNakDoc.kp_rows = [];
-  currentNakDoc.kp_rows.push(row);
-  renderNKPTable(currentNakDoc.kp_rows);
-  closeModal('modal-nak-kp');
-  // Clear fields
-  ['nkp-num','nkp-god','nkp-vhod','nkp-mg-form','nkp-punkt-form','nkp-kod-sobst','nkp-kod-osvid','nkp-mg-osvid'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
+  if(!cur.kp_rows)cur.kp_rows=[];
+  cur.kp_rows.push(row);renderKP();closeModal('m-kp');
 }
+function rmKP(i){cur.kp_rows.splice(i,1);renderKP();}
 
-function removeNKP(i) {
-  if (!currentNakDoc?.kp_rows) return;
-  currentNakDoc.kp_rows.splice(i, 1);
-  renderNKPTable(currentNakDoc.kp_rows);
-}
-
-async function saveNakatka() {
-  const data = {
-    wagon_number: document.getElementById('nak-vagon-num').value,
-    telega_number: document.getElementById('nak-telega-num').value,
-    vagon_type: document.getElementById('nak-vagon-type').value,
-    kontragent: document.getElementById('nak-kontragent').value,
-    remont_type: document.getElementById('nak-remont').value,
-    kp_rows: currentNakDoc?.kp_rows || [],
+async function saveNak(status){
+  const wnum=document.getElementById('nk-vagon').value.trim();
+  const v=validateWagonNumber(wnum);
+  if(!v.isValid){toast(v.message,'err');return;}
+  const data={
+    wagon_number:wnum,
+    telega_number:document.getElementById('nk-telega').value,
+    vagon_type:document.getElementById('nk-vtype').value,
+    kontragent:document.getElementById('nk-kontr').value,
+    remont_type:document.getElementById('nk-remont').value,
+    kp_rows:cur.kp_rows||[],
+    status:status,
   };
-  if (editingNakId) {
-    await fetch(`/api/nakatka/${editingNakId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
-  } else {
-    const r = await fetch('/api/nakatka', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
-    const d = await r.json();
-    if (d.ok) editingNakId = d.doc.id;
-  }
-  closeModal('modal-nakatka');
-  load();
-  alert('Натурный лист сохранён');
+  if(editId){await fetch('/api/nakatka/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});}
+  else{const r=await fetch('/api/nakatka',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();if(d.ok)editId=d.doc.id;}
+  toast(status==='Проведён'?'Лист проведён':'Черновик записан');
+  closeModal('m-nak');load();
 }
-
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 load();
 </script>
 {% endblock %}
