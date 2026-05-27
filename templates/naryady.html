@@ -180,16 +180,13 @@ function render(list){
     b.innerHTML='<tr class="row-empty"><td colspan="6"><span class="empty-hint"><span class="em">📝</span>Нарядов нет</span></td></tr>';
     return;
   }
-  b.innerHTML = list.map(d=>`<tr>
+  b.innerHTML = list.map(d=>`<tr class="clickable" onclick="openDoc(${d.id})">
     <td><span class="badge badge-blue">${esc(UCH_LABELS[d.uchastok]||d.uchastok)}</span></td>
     <td class="text-mono">${esc(d.date||'—')}</td>
     <td class="text-muted">${d.smena} смена</td>
     <td class="text-muted">${(d.brigada||[]).length} чел.</td>
     <td>${statusBadge(d.status)}</td>
-    <td><div class="flex gap-2">
-      <button class="btn btn-secondary btn-xs" onclick="openDoc(${d.id})">✎ Открыть</button>
-      <button class="btn btn-danger btn-xs" onclick="delDoc(${d.id})">🗑</button>
-    </div></td>
+    <td><button class="btn btn-danger btn-xs" onclick="event.stopPropagation();delDoc(${d.id})">🗑</button></td>
   </tr>`).join('');
 }
 wireSearch('search', ()=>all, render);
