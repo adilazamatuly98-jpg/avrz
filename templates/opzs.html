@@ -12,18 +12,24 @@
   </div></div>
 </div>
 
-{% if role in ['nachalnik','admin'] %}
+{% if role in ['nachalnik', 'admin'] %}
 <div class="tabs" id="tabs" style="margin-bottom:18px;max-width:760px;">
   <button class="tab active" data-uch="avtoscepka" onclick="switchTab('avtoscepka')">🔧 Автосцепка <span class="count" id="c-avtoscepka">0</span></button>
-  <button class="tab" data-uch="telega" onclick="switchTab('telega')">🏗 Тележечный <span class="count" id="c-telega">0</span></button>
-  <button class="tab" data-uch="akp" onclick="switchTab('akp')">🔩 АКП <span class="count" id="c-akp">0</span></button>
-  <button class="tab" data-uch="kuzov" onclick="switchTab('kuzov')">🏠 Кузов <span class="count" id="c-kuzov">0</span></button>
-  <button class="tab" data-uch="roller" onclick="switchTab('roller')">🔄 Роликовый <span class="count" id="c-roller">0</span></button>
+  <button class="tab" data-uch="telega"     onclick="switchTab('telega')">🏗 Тележечный <span class="count" id="c-telega">0</span></button>
+  <button class="tab" data-uch="akp"        onclick="switchTab('akp')">🔩 АКП <span class="count" id="c-akp">0</span></button>
+  <button class="tab" data-uch="kuzov"      onclick="switchTab('kuzov')">🏠 Кузов <span class="count" id="c-kuzov">0</span></button>
+  <button class="tab" data-uch="roller"     onclick="switchTab('roller')">🔄 Роликовый <span class="count" id="c-roller">0</span></button>
 </div>
-{% elif role == 'defektoskopist' and uchastok in ['vrc_def','wagon_def'] %}
+{% elif role == 'nachalnik_ktc' %}
+<div class="tabs" id="tabs" style="margin-bottom:18px;max-width:560px;">
+  <button class="tab active" data-uch="telega"  onclick="switchTab('telega')">🏗 Тележечный <span class="count" id="c-telega">0</span></button>
+  <button class="tab" data-uch="roller"         onclick="switchTab('roller')">🔄 Роликовый <span class="count" id="c-roller">0</span></button>
+  <button class="tab" data-uch="kolesny"        onclick="switchTab('kolesny')">⚙️ Колёсный <span class="count" id="c-kolesny">0</span></button>
+</div>
+{% elif role == 'defektoskopist' %}
 <div class="tabs" id="tabs" style="margin-bottom:18px;max-width:420px;">
   <button class="tab active" data-uch="avtoscepka" onclick="switchTab('avtoscepka')">🔧 Автосцепка <span class="count" id="c-avtoscepka">0</span></button>
-  <button class="tab" data-uch="telega" onclick="switchTab('telega')">🏗 Тележечный <span class="count" id="c-telega">0</span></button>
+  <button class="tab" data-uch="telega"            onclick="switchTab('telega')">🏗 Тележечный <span class="count" id="c-telega">0</span></button>
 </div>
 {% endif %}
 
@@ -140,7 +146,14 @@
         <button type="button" class="kind-opt" id="kind-num" onclick="setPartKind('num')">🔩 Номерная</button>
         <button type="button" class="kind-opt" id="kind-unnum" onclick="setPartKind('unnum')">🧩 Неномерная</button>
       </div>
-      <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Деталь</label><select class="form-control" id="p-type"></select></div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Деталь</label>
+        <input class="form-control" id="p-type" list="parts-datalist"
+               placeholder="Начните вводить название детали…"
+               autocomplete="off" style="width:100%;">
+        <datalist id="parts-datalist"></datalist>
+        <div id="p-type-quick" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+      </div>
 
       <!-- Поля номерной детали -->
       <div id="p-num-fields">
@@ -258,6 +271,17 @@
   .modal{box-shadow:none!important;max-width:100%!important}
   body{background:#fff!important}
 }
+
+<style>
+.chip-part{
+  display:inline-flex;align-items:center;
+  padding:4px 10px;border-radius:99px;
+  font-size:11px;font-weight:600;
+  background:var(--blue-50);color:var(--accent);
+  border:1px solid var(--blue-100);
+  cursor:pointer;transition:var(--t);white-space:nowrap;
+}
+.chip-part:hover{background:var(--accent);color:#fff;}
 </style>
 {% endblock %}
 {% block scripts %}
@@ -606,13 +630,34 @@ function setPartKind(kind){
   document.getElementById('p-unnum-fields').style.display=kind==='unnum'?'block':'none';
   // справочник деталей по типу
   const ref=(kind==='num'?(META.numbered||{}):(META.unnumbered||{}))[curDoc.uchastok]||[];
-  document.getElementById('p-type').innerHTML=ref.map(t=>`<option>${esc(t)}</option>`).join('')||'<option>Деталь</option>';
+  // Clear input when switching kind
+  const inp=document.getElementById('p-type'); if(inp) inp.value='';
+  if(curDoc) renderPartChips(curDoc.uchastok);
 }
 function fillPartRefs(){
   const optionsHtml = REMOVED_OPTIONS.map(o => `<option value="${o}">${esc(o)}</option>`).join('');
   document.getElementById('p-cond-num').innerHTML = optionsHtml;
   document.getElementById('p-cond-unnum').innerHTML = optionsHtml;
   document.getElementById('p-zavod').innerHTML='<option value="">—</option>'+(META.zavody||[]).map(z=>`<option>${esc(z)}</option>`).join('');
+  // Наполняем datalist для автодополнения
+  const dl = document.getElementById('parts-datalist');
+  if(dl && META.all_wagon_parts){
+    dl.innerHTML = META.all_wagon_parts.map(p=>`<option value="${esc(p)}">`).join('');
+  }
+}
+
+// Быстрые чипы деталей по участку
+function renderPartChips(uchastok){
+  const el = document.getElementById('p-type-quick');
+  if(!el) return;
+  const ref = (curKind==='num'
+    ? (META.numbered||{})[uchastok]
+    : (META.unnumbered||{})[uchastok]) || [];
+  if(!ref.length){ el.style.display='none'; return; }
+  el.style.display='flex';
+  el.innerHTML = ref.slice(0,8).map(name=>`
+    <button type="button" class="chip-part" onclick="document.getElementById('p-type').value='${esc(name)}'">${esc(name)}</button>
+  `).join('');
 }
 // гарантируем наличие значения в select
 function ensureOption(id,val){
