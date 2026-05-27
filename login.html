@@ -3,115 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>АРМ Ремонт Вагонов — Вход</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>АВРЗ — Вход в систему</title>
+<script>(function(){try{var t=localStorage.getItem('avrz-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
-  --border: #30363d; --accent: #f0a500;
-  --text: #e6edf3; --text2: #8b949e;
-  --danger: #da3633;
-}
-body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; display: flex; min-height: 100vh; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-.bg-pattern { position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(240,165,0,.03) 40px, rgba(240,165,0,.03) 41px), repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(240,165,0,.03) 40px, rgba(240,165,0,.03) 41px); pointer-events: none; }
-.bg-glow { position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(240,165,0,.06) 0%, transparent 70%); pointer-events: none; }
-.login-wrap { position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 20px; }
-.login-logo { text-align: center; margin-bottom: 32px; }
-.login-logo-text { font-family: 'Oswald', sans-serif; font-size: 42px; font-weight: 700; color: var(--accent); letter-spacing: 4px; }
-.login-logo-sub { color: var(--text2); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
-.login-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 32px; }
-.login-title { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text2); }
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; color: var(--text2); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .8px; }
-.form-control { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; outline: none; transition: border-color .15s; }
-.form-control:focus { border-color: var(--accent); }
-.btn-login { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; cursor: pointer; transition: background .15s; margin-top: 8px; }
-.btn-login:hover { background: #ffb833; }
-.error-msg { background: rgba(218,54,51,.1); border: 1px solid rgba(218,54,51,.3); color: #f85149; border-radius: 4px; padding: 10px 14px; font-size: 13px; margin-top: 14px; display: none; }
-.demo-users { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
-.demo-label { color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
-.demo-user { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: background .1s; font-size: 13px; }
-.demo-user:hover { background: var(--bg3); }
-.demo-user-name { color: var(--text); }
-.demo-user-role { color: var(--text2); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+:root{--blue-500:#3b73f0;--blue-600:#2563eb;--blue-700:#1d4ed8;--bg:#f4f7fc;--surface:#fff;--border:#e6ebf3;--text:#0e1726;--text-2:#5a6b85;--text-3:#94a3b8;--red:#dc2626;--radius-sm:8px;--logo-fill:#1d4ed8}
+[data-theme="dark"]{--blue-500:#3b82f6;--blue-600:#3b82f6;--blue-700:#60a5fa;--bg:#0c1320;--surface:#141d2b;--border:#26313f;--text:#e8eef7;--text-2:#9aa7bc;--text-3:#5f6d83;--red:#f04444;--logo-fill:#e8eef7}
+.theme-toggle{position:fixed;top:18px;right:18px;z-index:5;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:17px;cursor:pointer;transition:.18s}
+.theme-toggle:hover{border-color:var(--blue-600);color:var(--blue-600)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:var(--bg);font-family:'Manrope',sans-serif;color:var(--text);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.bg{position:fixed;inset:0;background:
+  radial-gradient(900px 420px at 70% -10%,rgba(37,99,235,.10),transparent 60%),
+  radial-gradient(700px 400px at 10% 110%,rgba(37,99,235,.07),transparent 60%);pointer-events:none}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(37,99,235,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.035) 1px,transparent 1px);background-size:46px 46px;pointer-events:none;mask:radial-gradient(800px 600px at 50% 40%,#000,transparent)}
+.wrap{position:relative;z-index:1;width:100%;max-width:430px;padding:24px}
+.logo{text-align:center;margin-bottom:26px}
+.logo .mark{width:210px;height:96px;margin:0 auto 10px;background-color:var(--logo-fill);-webkit-mask:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJIAAABCCAYAAAC8RY+hAAADcElEQVR4nO3dsWvUYBzG8W88USycKBZBsdDBSerk5iCKgyg4uDs6FQddFUSQ9h8ouBUEQZeqXXRwEgQFJ0VEFNxcrBaEK1WLEock1zTaS3LvL2+S6/OB0DbNvfklfS73vknuGoRhSMqGH0RyBMk32+qsQkaHgiQmFCQxoSCJie0llg3yF5ERVGgApiOSmFCQxISCJCYUJDGhIIkJyyDtMmxLWiYoca0tb/iv63Tt5PJ31bU2sZUNUpCZFn0XJI2WzUefjkhiQkESEwqSmFCQxISCJCYUJDGhIIkJBUlMKEhiQkESEwqSmFCQxISCJCYUJDGhIImJvCDt8VGEtF/2nbZTQBeYBDrASc/1SLOlb7u9BdxIftA926J7tqU5rILUMWpH/OpZNWQVpD/8e2N4Mq0araOMuQH11DnV5d4m9ey2WoFlH2kQ3/2nJn8ETx19yar+dt77SEU3pIf7s7nJIQI4UmJZi6Obl/3hs7M9lvP7WQYfagNgPqeNpocI4D35dT4vsEyRbfW2P3wG6Qfrz6Zp4AtwNzXveoE2LsXLHiR63X8CnKf8s7QJkpqvAM+AO0Tn7wLgRMk2zsWPXwQOU8P+8NVHkvZqVB9JRpyCJCYUJDFRdZB0xrs6Ozys42zRBct8zrYuysqm9NImJhQkMaEgiYlsH+km8KqGOqQ9VoF9wMP0zOyZbZGh6KVNTChIYkJBEhMKkphIRm0HgAXgI1GPfJA1ovtmfgNv4nmrwNUK6kt7RHRZoAOssP6/T3rAznh+D5gAluL6xoD9wDLwCTgKnKq4zhlgPF7vEnAont+Nvy7nPL4L3CYzKqrAT6L9lvbrP/M285poW+aB+0EYhjPANaPivgN7jdrKshxeTgCfDdtLs6yzynvALOt8EYT24/+qNl512jKtM91HmmT4t9nMWhaVoy1vCWp6jRZvr/rQbyx1RHLZgCngrUE7gyR1HgdeOrYB1dfp0v5jovuwXdsZ5CJR33aNqEtyjKiPXOTWn048PUhmbNWXtrb0PaAl+3OrDv/f1V1AQUVHUHVbaOMRybV9q3by2nd1Bnhq1FZVvhKd6tjQ2T7N8J2uaU+Fu5ryuK4ubh3ZqkN0mfxzhnnGk2+yo7Zh+bz1JHSYkgHBooc6Vzysw8Uc8A23/dmXDpJLGOr4xBEXF+ouYMQEfwFN36s+HHuqtQAAAABJRU5ErkJggg==') no-repeat center/contain;mask:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJIAAABCCAYAAAC8RY+hAAADcElEQVR4nO3dsWvUYBzG8W88USycKBZBsdDBSerk5iCKgyg4uDs6FQddFUSQ9h8ouBUEQZeqXXRwEgQFJ0VEFNxcrBaEK1WLEock1zTaS3LvL2+S6/OB0DbNvfklfS73vknuGoRhSMqGH0RyBMk32+qsQkaHgiQmFCQxoSCJie0llg3yF5ERVGgApiOSmFCQxISCJCYUJDGhIIkJyyDtMmxLWiYoca0tb/iv63Tt5PJ31bU2sZUNUpCZFn0XJI2WzUefjkhiQkESEwqSmFCQxISCJCYUJDGhIIkJBUlMKEhiQkESEwqSmFCQxISCJCYUJDGhIImJvCDt8VGEtF/2nbZTQBeYBDrASc/1SLOlb7u9BdxIftA926J7tqU5rILUMWpH/OpZNWQVpD/8e2N4Mq0araOMuQH11DnV5d4m9ey2WoFlH2kQ3/2nJn8ETx19yar+dt77SEU3pIf7s7nJIQI4UmJZi6Obl/3hs7M9lvP7WQYfagNgPqeNpocI4D35dT4vsEyRbfW2P3wG6Qfrz6Zp4AtwNzXveoE2LsXLHiR63X8CnKf8s7QJkpqvAM+AO0Tn7wLgRMk2zsWPXwQOU8P+8NVHkvZqVB9JRpyCJCYUJDFRdZB0xrs6Ozys42zRBct8zrYuysqm9NImJhQkMaEgiYlsH+km8KqGOqQ9VoF9wMP0zOyZbZGh6KVNTChIYkJBEhMKkphIRm0HgAXgI1GPfJA1ovtmfgNv4nmrwNUK6kt7RHRZoAOssP6/T3rAznh+D5gAluL6xoD9wDLwCTgKnKq4zhlgPF7vEnAont+Nvy7nPL4L3CYzKqrAT6L9lvbrP/M285poW+aB+0EYhjPANaPivgN7jdrKshxeTgCfDdtLs6yzynvALOt8EYT24/+qNl512jKtM91HmmT4t9nMWhaVoy1vCWp6jRZvr/rQbyx1RHLZgCngrUE7gyR1HgdeOrYB1dfp0v5jovuwXdsZ5CJR33aNqEtyjKiPXOTWn048PUhmbNWXtrb0PaAl+3OrDv/f1V1AQUVHUHVbaOMRybV9q3by2nd1Bnhq1FZVvhKd6tjQ2T7N8J2uaU+Fu5ryuK4ubh3ZqkN0mfxzhnnGk2+yo7Zh+bz1JHSYkgHBooc6Vzysw8Uc8A23/dmXDpJLGOr4xBEXF+ouYMQEfwFN36s+HHuqtQAAAABJRU5ErkJggg==') no-repeat center/contain}
+.logo b{display:none}
+.logo span{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);font-weight:700}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px;box-shadow:0 24px 60px -22px rgba(16,30,55,.22)}
+.title{font-weight:800;font-size:21px;margin-bottom:4px}
+.subtitle{color:var(--text-2);font-size:13px;margin-bottom:22px}
+.fg{margin-bottom:14px}
+.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-2);margin-bottom:6px}
+.inp{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:var(--radius-sm);font-family:'Manrope';font-size:15px;outline:none;transition:.18s}
+.inp:focus{border-color:var(--blue-600);box-shadow:0 0 0 4px rgba(37,99,235,.14)}
+.btn{width:100%;background:var(--blue-600);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-family:'Manrope';font-weight:800;font-size:15px;letter-spacing:.4px;cursor:pointer;transition:.18s;margin-top:6px}
+.btn:hover{background:var(--blue-700);box-shadow:0 8px 22px -6px rgba(37,99,235,.6)}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{background:#fdeaea;border:1px solid #f8caca;color:var(--red);border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;margin-top:13px;display:none;font-weight:600}
+.demo{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.demo-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+.du{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;transition:.13s;margin-bottom:3px}
+.du:hover{background:#f4f7fc;border-color:var(--border);transform:translateX(2px)}
+.du b{font-size:13px;font-weight:600}
+.du span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3)}
 </style>
 </head>
 <body>
-<div class="bg-pattern"></div>
-<div class="bg-glow"></div>
-<div class="login-wrap">
-  <div class="login-logo">
-    <div class="login-logo-text">РЦ/АРМ</div>
-    <div class="login-logo-sub">Система учёта ремонта вагонов</div>
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Светлая / тёмная тема"></button>
+<div class="bg"></div><div class="grid-bg"></div>
+<div class="wrap">
+  <div class="logo">
+<div class="mark" role="img" aria-label="АВРЗ"></div>
+    <span>Система учёта ремонта вагонов</span>
   </div>
-  <div class="login-card">
-    <div class="login-title">Авторизация</div>
-    <div class="form-group">
-      <label class="form-label">Логин</label>
-      <input class="form-control" id="username" type="text" placeholder="Введите логин" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Пароль</label>
-      <input class="form-control" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-login" id="login-btn" onclick="doLogin()">ВОЙТИ В СИСТЕМУ</button>
-    <div class="error-msg" id="error-msg"></div>
-    <div class="demo-users">
-      <div class="demo-label">Быстрый вход (демо)</div>
-      <div class="demo-user" onclick="fillLogin('nachalnik','1')">
-        <span class="demo-user-name">Начальник цеха</span>
-        <span class="demo-user-role">nachalnik / 1</span>
-      </div>
-      <div class="demo-user" onclick="fillLogin('master_auto','1')">
-        <span class="demo-user-name">Мастер (Автосцепка)</span>
-        <span class="demo-user-role">master_auto / 1</span>
-      </div>
-      <div class="demo-user" onclick="fillLogin('master_telega','1')">
-        <span class="demo-user-name">Мастер (Тележечный)</span>
-        <span class="demo-user-role">master_telega / 1</span>
-      </div>
-      <div class="demo-user" onclick="fillLogin('master_akp','1')">
-        <span class="demo-user-name">Мастер (АКП)</span>
-        <span class="demo-user-role">master_akp / 1</span>
-      </div>
-      <div class="demo-user" onclick="fillLogin('master_roller','1')">
-        <span class="demo-user-name">Мастер (Роликовый)</span>
-        <span class="demo-user-role">master_roller / 1</span>
-      </div>
-      <div class="demo-user" onclick="fillLogin('defekt1','1')">
-        <span class="demo-user-name">Дефектоскопист</span>
-        <span class="demo-user-role">defekt1 / 1</span>
-      </div>
+  <div class="card">
+    <div class="title">Вход в систему</div>
+    <div class="subtitle">Авторизуйтесь для продолжения работы</div>
+    <div class="fg"><label class="lbl">Логин</label><input class="inp" id="u" placeholder="Введите логин" autocomplete="username"></div>
+    <div class="fg"><label class="lbl">Пароль</label><input class="inp" id="p" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn" id="btn" onclick="doLogin()">Войти</button>
+    <div class="err" id="err"></div>
+    <div class="demo">
+      <div class="demo-lbl">Быстрый вход (демо)</div>
+      <div class="du" onclick="fill('admin')"><b>Администратор (Бюро описи)</b><span>admin / 1</span></div>
+      <div class="du" onclick="fill('nachalnik')"><b>Начальник цеха</b><span>nachalnik / 1</span></div>
+      <div class="du" onclick="fill('master_auto')"><b>Мастер · Автосцепка</b><span>master_auto / 1</span></div>
+      <div class="du" onclick="fill('master_telega')"><b>Мастер · Тележечный</b><span>master_telega / 1</span></div>
+      <div class="du" onclick="fill('master_akp')"><b>Мастер · АКП</b><span>master_akp / 1</span></div>
+      <div class="du" onclick="fill('master_roller')"><b>Мастер · Роликовый</b><span>master_roller / 1</span></div>
+      <div class="du" onclick="fill('defekt1')"><b>Дефектоскопист</b><span>defekt1 / 1</span></div>
     </div>
   </div>
 </div>
 <script>
-function fillLogin(u, p) {
-  document.getElementById('username').value = u;
-  document.getElementById('password').value = p;
-  doLogin();
+function applyThemeIcon(){var d=document.documentElement.getAttribute('data-theme')==='dark';var b=document.getElementById('theme-toggle');if(b)b.textContent=d?'☀️':'🌙';}
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme')==='dark';if(d){document.documentElement.removeAttribute('data-theme');try{localStorage.setItem('avrz-theme','light');}catch(e){}}else{document.documentElement.setAttribute('data-theme','dark');try{localStorage.setItem('avrz-theme','dark');}catch(e){}}applyThemeIcon();}
+applyThemeIcon();
+function fill(u){document.getElementById('u').value=u;document.getElementById('p').value='1';doLogin();}
+async function doLogin(){
+  const u=document.getElementById('u').value.trim(),p=document.getElementById('p').value;
+  if(!u||!p)return;
+  const b=document.getElementById('btn');b.textContent='Вход…';b.disabled=true;
+  try{
+    const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(d.ok){location.href='/dashboard';}
+    else{const e=document.getElementById('err');e.textContent=d.error;e.style.display='block';b.textContent='Войти';b.disabled=false;}
+  }catch(e){b.textContent='Войти';b.disabled=false;}
 }
-async function doLogin() {
-  const u = document.getElementById('username').value.trim();
-  const p = document.getElementById('password').value;
-  if (!u || !p) return;
-  const btn = document.getElementById('login-btn');
-  btn.textContent = 'Вход...'; btn.disabled = true;
-  try {
-    const r = await fetch('/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
-    const d = await r.json();
-    if (d.ok) { window.location.href = '/dashboard'; }
-    else {
-      const em = document.getElementById('error-msg');
-      em.textContent = d.error; em.style.display = 'block';
-      btn.textContent = 'ВОЙТИ В СИСТЕМУ'; btn.disabled = false;
-    }
-  } catch(e) {
-    btn.textContent = 'ВОЙТИ В СИСТЕМУ'; btn.disabled = false;
-  }
-}
-document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 </script>
 </body>
 </html>
