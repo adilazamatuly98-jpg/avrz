@@ -1,333 +1,152 @@
 {% extends "base.html" %}
-{% block title %}Колёсные пары — АРМ Ремонт{% endblock %}
+{% block title %}Колёсные пары — АВРЗ{% endblock %}
+{% block crumb %}Производство <span>/ Колёсные пары</span>{% endblock %}
 {% block content %}
-<div class="page">
-  <div class="page-header">
-    <div class="page-title">Колёсные пары</div>
-  </div>
-
-  <div class="tabs" id="kp-tabs">
-    {% if role in ['defektoskopist', 'nachalnik'] %}
-    <div class="tab active" data-tab="arrival">Приход КП</div>
-    <div class="tab" data-tab="departure">Выход КП</div>
-    {% endif %}
-    {% if role in ['master_roller', 'nachalnik'] %}
-    <div class="tab {% if role=='master_roller' %}active{% endif %}" data-tab="roller">Роликовый участок</div>
-    {% endif %}
-  </div>
-
-  <!-- ARRIVAL -->
-  {% if role in ['defektoskopist', 'nachalnik'] %}
-  <div id="tab-arrival">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--text2);">Документ «Приход КП на цех»</div>
-      <div style="display:flex;gap:8px;">
-        {% if role == 'defektoskopist' %}
-        <button class="btn btn-secondary" onclick="openAddKPRow('arrival')">＋ Добавить КП</button>
-        {% endif %}
-        <button class="btn btn-primary" onclick="saveKPDoc('arrival')">💾 Сохранить документ</button>
-      </div>
-    </div>
-    <div class="info-panel" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-      <div class="info-item"><label>Дата</label><input class="form-control" id="arrival-date" type="date" style="width:160px;"></div>
-      <div class="info-item"><label>Смена</label><select class="form-control" id="arrival-shift" style="width:100px;"><option>1</option><option>2</option><option>3</option></select></div>
-      <div id="arrival-doc-id" class="text-muted" style="font-size:12px;"></div>
-      <button class="btn btn-secondary btn-sm" onclick="loadOrCreateKPDoc('arrival')">Загрузить / создать</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Колёсные пары — приход</div><div class="text-muted" style="font-size:12px;" id="arrival-count"></div></div>
-      <div class="card-body" style="padding:0;">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Вх. номер</th><th>Сер. номер</th><th>Год</th><th>Завод</th><th>Дата поступления</th><th>Дата посл. ремонта</th><th>Вид ремонта</th><th></th></tr></thead>
-            <tbody id="tbl-arrival"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- DEPARTURE -->
-  <div id="tab-departure" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--text2);">Документ «Выход КП»</div>
-      <div style="display:flex;gap:8px;">
-        {% if role == 'defektoskopist' %}
-        <button class="btn btn-secondary" onclick="openAddKPRow('departure')">＋ Добавить КП</button>
-        {% endif %}
-        <button class="btn btn-primary" onclick="saveKPDoc('departure')">💾 Сохранить документ</button>
-      </div>
-    </div>
-    <div class="info-panel" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-      <div class="info-item"><label>Дата</label><input class="form-control" id="departure-date" type="date" style="width:160px;"></div>
-      <div class="info-item"><label>Смена</label><select class="form-control" id="departure-shift" style="width:100px;"><option>1</option><option>2</option><option>3</option></select></div>
-      <button class="btn btn-secondary btn-sm" onclick="loadOrCreateKPDoc('departure')">Загрузить / создать</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Колёсные пары — выход</div></div>
-      <div class="card-body" style="padding:0;">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Вх. номер</th><th>Сер. номер оси</th><th>Год</th><th>Завод</th><th>Тип оси</th><th>Серия лев. кол.</th><th>Серия прав. кол.</th><th></th></tr></thead>
-            <tbody id="tbl-departure"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ROLLER -->
-  {% if role in ['master_roller', 'nachalnik'] %}
-  <div id="tab-roller" {% if role != 'master_roller' %}style="display:none;"{% endif %}>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--text2);">Роликовый участок — смена</div>
-      <div style="display:flex;gap:8px;">
-        {% if role == 'master_roller' %}
-        <button class="btn btn-secondary" onclick="openAddKPRow('roller')">＋ Добавить КП</button>
-        {% endif %}
-        <button class="btn btn-primary" onclick="saveKPDoc('roller')">💾 Сохранить документ</button>
-      </div>
-    </div>
-    <div class="info-panel" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-      <div class="info-item"><label>Дата</label><input class="form-control" id="roller-date" type="date" style="width:160px;"></div>
-      <div class="info-item"><label>Смена</label><select class="form-control" id="roller-shift" style="width:100px;"><option>1</option><option>2</option><option>3</option></select></div>
-      <button class="btn btn-secondary btn-sm" onclick="loadOrCreateKPDoc('roller')">Загрузить / создать</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Ремонт роликовых узлов</div></div>
-      <div class="card-body" style="padding:0;">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Сер. номер КП</th><th>Тип КП</th><th>Номенклатура</th><th>Кол-во</th><th>Снято/ушло</th><th>Установлено</th><th></th></tr></thead>
-            <tbody id="tbl-roller"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
+<div class="page-header">
+  <div><div class="page-title">Колёсные <span>пары</span></div>
+  <div class="page-sub">Приход, выход и роликовый участок</div></div>
+  <button class="btn btn-primary" onclick="openCreate()">＋ Новый документ</button>
 </div>
 
-<!-- Modal: Add KP Row (card-style) -->
-<div class="modal-overlay" id="modal-add-kp">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="kp-modal-title">Добавить колёсную пару</div>
-      <button class="btn-close" onclick="closeModal('modal-add-kp')">✕</button>
+<div class="tabs" id="tabs" style="margin-bottom:18px;max-width:520px;">
+  <button class="tab active" data-t="kp_arrival" onclick="switchTab('kp_arrival')">⬇️ Приход</button>
+  <button class="tab" data-t="kp_departure" onclick="switchTab('kp_departure')">⬆️ Выход</button>
+  <button class="tab" data-t="roller" onclick="switchTab('roller')">🔄 Роликовый</button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title" id="list-title">Документы</div>
+    <div class="search-box"><span class="ic">🔍</span><input class="form-control" id="search" style="width:240px;" placeholder="Поиск по всем полям…"></div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="tbl-wrap"><table>
+      <thead id="thead"></thead>
+      <tbody id="body"><tr class="row-empty"><td colspan="7">Загрузка…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- Create / view modal -->
+<div class="modal-overlay" id="m-doc">
+  <div class="modal modal-lg" style="max-width:760px;">
+    <div class="modal-header"><div class="modal-title" id="doc-title">Колёсная пара</div><button class="btn-close" onclick="closeModal('m-doc')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Номер КП</label><input class="form-control" id="f-num"></div>
+        <div class="form-group"><label class="form-label">Тип КП</label>
+          <select class="form-control" id="f-tip"><option>РУ1-950</option><option>РУ1Ш-950</option><option>РВ2Ш-957</option><option>РВ3Ш-957</option></select></div>
+        <div class="form-group"><label class="form-label">Год изготовления</label><select class="form-control" id="f-god"></select></div>
+        <div class="form-group"><label class="form-label">Завод</label>
+          <select class="form-control" id="f-zavod"><option value="">—</option><option>НКМЗ</option><option>ВМЗ</option><option>УКВЗ</option><option>УЗТМ</option><option>ФАНПАС</option><option>СКТБ</option></select></div>
+        <div class="form-group" id="wrap-vhod"><label class="form-label">Входящий номер</label><input class="form-control" id="f-vhod"></div>
+        <div class="form-group"><label class="form-label">Результат дефектоскопии</label>
+          <select class="form-control" id="f-defekt"><option>Годна</option><option>В ремонт</option><option>Брак</option></select></div>
+      </div>
+      <div id="wrap-osvid" style="display:none;">
+        <div class="form-group" style="max-width:320px;"><label class="form-label">Месяц/год освидетельствования</label><div id="osvid-wrap"></div></div>
+      </div>
+      <div class="form-group" style="margin-top:16px;"><label class="form-label">Примечание</label><input class="form-control" id="f-note"></div>
     </div>
-    <div class="modal-body" id="kp-modal-form"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-add-kp')">Отмена</button>
-      <button class="btn btn-primary" onclick="commitKPRow()">Добавить</button>
-    </div>
+    <div class="modal-footer" id="doc-footer"></div>
   </div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-const ROLE = '{{ role }}';
-let REF = {};
-let docs = { arrival: null, departure: null, roller: null };
-let currentKPTab = ROLE === 'master_roller' ? 'roller' : 'arrival';
-let addingToSection = '';
+const TAB_LABEL={kp_arrival:'Приход КП',kp_departure:'Выход КП',roller:'Роликовый участок'};
+let cur='kp_arrival', data={kp_arrival:[],kp_departure:[],roller:[]}, curDoc=null;
 
-async function init() {
-  REF = await fetch('/api/reference/details').then(r=>r.json());
-  const today = new Date().toISOString().split('T')[0];
-  ['arrival','departure','roller'].forEach(s => {
-    const el = document.getElementById(`${s}-date`);
-    if (el) el.value = today;
-  });
-  setupTabs();
-  if (ROLE === 'master_roller') renderRollerTable([]);
-  else renderArrivalTable([]); renderDepartureTable([]);
+function statusBadge(s){return `<span class="badge ${s==='Проведён'?'badge-green':'badge-gray'}">${s==='Проведён'?'✓':'✎'} ${esc(s||'Черновик')}</span>`;}
+function defektBadge(s){const m={'Годна':'badge-green','В ремонт':'badge-amber','Брак':'badge-red'};return `<span class="badge ${m[s]||'badge-gray'}">${esc(s||'—')}</span>`;}
+function fmtMY(s){if(!s)return '—';const p=String(s).split('T')[0].split('-');return p.length>=2?`${p[1]}.${p[0]}`:s;}
+
+async function loadAll(){
+  for(const k of Object.keys(data)) data[k]=await fetch('/api/'+k).then(r=>r.json());
+  render();
 }
+function switchTab(t){cur=t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.t===t));document.getElementById('search').value='';render();}
 
-function setupTabs() {
-  document.querySelectorAll('#kp-tabs .tab').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('#kp-tabs .tab').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      const tab = t.dataset.tab;
-      ['arrival','departure','roller'].forEach(s => {
-        const el = document.getElementById('tab-'+s);
-        if (el) el.style.display = s === tab ? 'block' : 'none';
-      });
-      currentKPTab = tab;
-    });
-  });
+function header(){
+  if(cur==='kp_departure') return '<tr><th>Номер КП</th><th>Тип</th><th>Завод</th><th>Освид.</th><th>Дефектоскопия</th><th>Статус</th></tr>';
+  if(cur==='roller') return '<tr><th>Номер КП</th><th>Тип</th><th>Завод</th><th>Дефектоскопия</th><th>Статус</th><th>Создан</th></tr>';
+  return '<tr><th>Номер КП</th><th>Тип</th><th>Год</th><th>Завод</th><th>Дефектоскопия</th><th>Статус</th></tr>';
 }
+function render(list){
+  list=list||data[cur];
+  document.getElementById('thead').innerHTML=header();
+  document.getElementById('list-title').textContent=`${TAB_LABEL[cur]} · ${list.length}`;
+  const b=document.getElementById('body');
+  if(!list.length){b.innerHTML=`<tr class="row-empty"><td colspan="7">Документов нет</td></tr>`;return;}
+  b.innerHTML=list.map(d=>{
+    const base=`<td class="font-bold text-mono">${esc(d.num)}</td><td><span class="badge badge-blue">${esc(d.tip)}</span></td>`;
+    if(cur==='kp_departure') return `<tr class="clickable" onclick="openDoc(${d.id})">${base}<td>${esc(d.zavod)||'—'}</td><td class="text-mono">${fmtMY(d.mg_osvid)}</td><td>${defektBadge(d.defekt)}</td><td>${statusBadge(d.status)}</td></tr>`;
+    if(cur==='roller') return `<tr class="clickable" onclick="openDoc(${d.id})">${base}<td>${esc(d.zavod)||'—'}</td><td>${defektBadge(d.defekt)}</td><td>${statusBadge(d.status)}</td><td class="text-muted">${fmtDate(d.created_at)}</td></tr>`;
+    return `<tr class="clickable" onclick="openDoc(${d.id})">${base}<td>${esc(d.god)||'—'}</td><td>${esc(d.zavod)||'—'}</td><td>${defektBadge(d.defekt)}</td><td>${statusBadge(d.status)}</td></tr>`;
+  }).join('');
+}
+wireSearch('search',()=>data[cur],render);
 
-async function loadOrCreateKPDoc(section) {
-  const date = document.getElementById(`${section}-date`)?.value;
-  const shift = document.getElementById(`${section}-shift`)?.value;
-  const url = section === 'roller' ? '/api/roller' : section === 'arrival' ? '/api/kp_arrival' : '/api/kp_departure';
-  const list = await fetch(url).then(r=>r.json());
-  const existing = list.find(d => d.date === date && d.shift === shift);
-  if (existing) {
-    docs[section] = existing;
-    alert(`Загружен существующий документ #${existing.id}`);
-  } else {
-    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({date, shift, rows:[]})});
-    const d = await r.json();
-    if (d.ok) { docs[section] = d.doc; alert(`Создан новый документ #${d.doc.id}`); }
+function setupModal(forDeparture){
+  document.getElementById('wrap-osvid').style.display=forDeparture?'block':'none';
+  document.getElementById('wrap-vhod').style.display=(cur==='kp_arrival')?'block':'none';
+  if(forDeparture)document.getElementById('osvid-wrap').innerHTML=monthYearSelect('os-m','os-y',curDoc?dateToMonthYear(curDoc.mg_osvid):{});
+}
+function openCreate(){
+  curDoc=null;
+  document.getElementById('doc-title').textContent='Новый документ · '+TAB_LABEL[cur];
+  ['f-num','f-vhod','f-note'].forEach(id=>document.getElementById(id).value='');
+  fillYears('f-god','');
+  document.getElementById('f-tip').value='РУ1-950';document.getElementById('f-zavod').value='';document.getElementById('f-defekt').value='Годна';
+  setupModal(cur==='kp_departure');
+  renderFooter(false);openModal('m-doc');
+}
+function openDoc(id){
+  curDoc=data[cur].find(x=>x.id===id);
+  document.getElementById('doc-title').textContent=`КП ${curDoc.num} · ${TAB_LABEL[cur]}`;
+  document.getElementById('f-num').value=curDoc.num||'';
+  document.getElementById('f-tip').value=curDoc.tip||'РУ1-950';
+  fillYears('f-god',curDoc.god||'');
+  document.getElementById('f-zavod').value=curDoc.zavod||'';
+  document.getElementById('f-vhod').value=curDoc.vhod||'';
+  document.getElementById('f-defekt').value=curDoc.defekt||'Годна';
+  document.getElementById('f-note').value=curDoc.note||'';
+  setupModal(cur==='kp_departure');
+  renderFooter(curDoc.status==='Проведён');openModal('m-doc');
+}
+function renderFooter(locked){
+  const f=document.getElementById('doc-footer');
+  let h=`<button class="btn btn-secondary" onclick="closeModal('m-doc')">Закрыть</button>`;
+  if(locked){h+=`<span class="badge badge-green" style="align-self:center;">✓ Проведён</span>`;}
+  else{h+=`<button class="btn btn-secondary" onclick="save('Черновик')">💾 Записать</button><button class="btn btn-primary" onclick="save('Проведён')">➤ Провести</button>`;}
+  f.innerHTML=h;
+}
+async function save(status){
+  const payload={
+    num:document.getElementById('f-num').value.trim(),
+    tip:document.getElementById('f-tip').value,
+    god:document.getElementById('f-god').value,
+    zavod:document.getElementById('f-zavod').value,
+    vhod:document.getElementById('f-vhod').value,
+    defekt:document.getElementById('f-defekt').value,
+    note:document.getElementById('f-note').value,
+    status:status,
+  };
+  if(cur==='kp_departure'){
+    payload.mg_osvid=monthYearToDate(document.getElementById('os-m').value,document.getElementById('os-y').value);
   }
-  if (section==='arrival') renderArrivalTable(docs[section]?.rows||[]);
-  else if (section==='departure') renderDepartureTable(docs[section]?.rows||[]);
-  else renderRollerTable(docs[section]?.rows||[]);
-}
-
-function renderArrivalTable(rows) {
-  const c = document.getElementById('arrival-count');
-  if (c) c.textContent = `${rows.length} КП`;
-  document.getElementById('tbl-arrival').innerHTML = rows.map((r,i)=>`
-    <tr>
-      <td class="text-muted">${i+1}</td>
-      <td class="text-mono">${r.vhod_num||''}</td>
-      <td class="text-mono">${r.serial||''}</td>
-      <td>${r.god||''}</td>
-      <td>${r.zavod||''}</td>
-      <td>${r.date_postupl||''}</td>
-      <td>${r.date_last_remont||''}</td>
-      <td><span class="badge badge-warn">${r.vid_remont||''}</span></td>
-      <td>${ROLE==='defektoskopist'?`<button class="btn btn-danger btn-xs" onclick="removeKPRow('arrival',${i})">✕</button>`:''}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:20px;">Нет записей</td></tr>';
-}
-
-function renderDepartureTable(rows) {
-  document.getElementById('tbl-departure').innerHTML = rows.map((r,i)=>`
-    <tr>
-      <td class="text-muted">${i+1}</td>
-      <td class="text-mono">${r.vhod_num||''}</td>
-      <td class="text-mono">${r.serial_os||''}</td>
-      <td>${r.god||''}</td>
-      <td>${r.zavod||''}</td>
-      <td>${r.tip_osi||''}</td>
-      <td class="text-mono">${r.seria_lev||''}</td>
-      <td class="text-mono">${r.seria_prav||''}</td>
-      <td>${ROLE==='defektoskopist'?`<button class="btn btn-danger btn-xs" onclick="removeKPRow('departure',${i})">✕</button>`:''}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:20px;">Нет записей</td></tr>';
-}
-
-function renderRollerTable(rows) {
-  document.getElementById('tbl-roller').innerHTML = rows.map((r,i)=>`
-    <tr>
-      <td class="text-muted">${i+1}</td>
-      <td class="text-mono">${r.serial_kp||''}</td>
-      <td><span class="badge badge-warn">${r.tip_kp||''}</span></td>
-      <td>${r.nomenklatura||''}</td>
-      <td>${r.kol||''}</td>
-      <td>${r.snyato||''}</td>
-      <td>${r.ustanovleno||''}</td>
-      <td>${ROLE==='master_roller'?`<button class="btn btn-danger btn-xs" onclick="removeKPRow('roller',${i})">✕</button>`:''}</td>
-    </tr>`).join('') || '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:20px;">Нет записей</td></tr>';
-}
-
-function openAddKPRow(section) {
-  addingToSection = section;
-  document.getElementById('kp-modal-title').textContent = section === 'arrival' ? 'Добавить КП — Приход' : section === 'departure' ? 'Добавить КП — Выход' : 'Добавить КП — Роликовый';
-  const form = document.getElementById('kp-modal-form');
-  if (section === 'arrival') {
-    form.innerHTML = `
-      <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Вх. номер</label><input class="form-control" id="kp-vhod-num"></div>
-        <div class="form-group"><label class="form-label">Серийный номер</label><input class="form-control" id="kp-serial"></div>
-        <div class="form-group"><label class="form-label">Год</label><input class="form-control" id="kp-god" type="number" min="1980" max="2030"></div>
-        <div class="form-group"><label class="form-label">Завод</label><select class="form-control" id="kp-zavod">${REF.zavody.map(z=>`<option>${z}</option>`).join('')}</select></div>
-        <div class="form-group"><label class="form-label">Дата поступления</label><input class="form-control" id="kp-date-post" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
-        <div class="form-group"><label class="form-label">Дата посл. ремонта</label><input class="form-control" id="kp-date-rem" type="date"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Вид ремонта</label>
-        <select class="form-control" id="kp-vid-rem">${REF.repair_types.map(t=>`<option>${t}</option>`).join('')}</select></div>`;
-  } else if (section === 'departure') {
-    form.innerHTML = `
-      <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Вх. номер</label><input class="form-control" id="kp-vhod-num"></div>
-        <div class="form-group"><label class="form-label">Серийный номер оси</label><input class="form-control" id="kp-serial-os"></div>
-        <div class="form-group"><label class="form-label">Год</label><input class="form-control" id="kp-god" type="number"></div>
-        <div class="form-group"><label class="form-label">Завод</label><select class="form-control" id="kp-zavod">${REF.zavody.map(z=>`<option>${z}</option>`).join('')}</select></div>
-        <div class="form-group"><label class="form-label">Тип оси</label><select class="form-control" id="kp-tip-osi">${REF.kp_types.map(t=>`<option>${t}</option>`).join('')}</select></div>
-      </div>
-      <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Серия левого колеса</label><input class="form-control" id="kp-seria-lev"></div>
-        <div class="form-group"><label class="form-label">Серия правого колеса</label><input class="form-control" id="kp-seria-prav"></div>
-      </div>`;
-  } else {
-    form.innerHTML = `
-      <div class="form-row form-row-2">
-        <div class="form-group"><label class="form-label">Серийный номер КП</label><input class="form-control" id="kp-serial-kp"></div>
-        <div class="form-group"><label class="form-label">Тип КП</label><select class="form-control" id="kp-tip-kp">${REF.kp_types.map(t=>`<option>${t}</option>`).join('')}</select></div>
-        <div class="form-group"><label class="form-label">Номенклатура</label><input class="form-control" id="kp-nomen" placeholder="Напр: Подшипник 42726 Е2М"></div>
-        <div class="form-group"><label class="form-label">Кол-во</label><input class="form-control" id="kp-kol" type="number"></div>
-        <div class="form-group"><label class="form-label">Снято/ушло</label><input class="form-control" id="kp-snyato"></div>
-        <div class="form-group"><label class="form-label">Установлено</label><input class="form-control" id="kp-ustanov"></div>
-      </div>`;
+  if(!payload.num){toast('Укажите номер КП','err');return;}
+  let r;
+  if(curDoc && curDoc.id){
+    r=await fetch('/api/'+cur+'/'+curDoc.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  }else{
+    r=await fetch('/api/'+cur,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   }
-  document.getElementById('modal-add-kp').classList.add('show');
+  const d=await r.json();
+  if(!d.ok){toast(d.message||'Ошибка сохранения','err');return;}
+  toast(status==='Проведён'?'Документ проведён':'Черновик записан');
+  closeModal('m-doc');loadAll();
 }
-
-function commitKPRow() {
-  const s = addingToSection;
-  if (!docs[s]) { docs[s] = { rows: [] }; }
-  if (!docs[s].rows) docs[s].rows = [];
-  let row = {};
-  if (s === 'arrival') {
-    row = {
-      vhod_num: document.getElementById('kp-vhod-num')?.value,
-      serial: document.getElementById('kp-serial')?.value,
-      god: document.getElementById('kp-god')?.value,
-      zavod: document.getElementById('kp-zavod')?.value,
-      date_postupl: document.getElementById('kp-date-post')?.value,
-      date_last_remont: document.getElementById('kp-date-rem')?.value,
-      vid_remont: document.getElementById('kp-vid-rem')?.value,
-    };
-    docs[s].rows.push(row);
-    renderArrivalTable(docs[s].rows);
-  } else if (s === 'departure') {
-    row = {
-      vhod_num: document.getElementById('kp-vhod-num')?.value,
-      serial_os: document.getElementById('kp-serial-os')?.value,
-      god: document.getElementById('kp-god')?.value,
-      zavod: document.getElementById('kp-zavod')?.value,
-      tip_osi: document.getElementById('kp-tip-osi')?.value,
-      seria_lev: document.getElementById('kp-seria-lev')?.value,
-      seria_prav: document.getElementById('kp-seria-prav')?.value,
-    };
-    docs[s].rows.push(row);
-    renderDepartureTable(docs[s].rows);
-  } else {
-    row = {
-      serial_kp: document.getElementById('kp-serial-kp')?.value,
-      tip_kp: document.getElementById('kp-tip-kp')?.value,
-      nomenklatura: document.getElementById('kp-nomen')?.value,
-      kol: document.getElementById('kp-kol')?.value,
-      snyato: document.getElementById('kp-snyato')?.value,
-      ustanovleno: document.getElementById('kp-ustanov')?.value,
-    };
-    docs[s].rows.push(row);
-    renderRollerTable(docs[s].rows);
-  }
-  closeModal('modal-add-kp');
-}
-
-function removeKPRow(section, i) {
-  if (docs[section]?.rows) {
-    docs[section].rows.splice(i, 1);
-    if (section === 'arrival') renderArrivalTable(docs[section].rows);
-    else if (section === 'departure') renderDepartureTable(docs[section].rows);
-    else renderRollerTable(docs[section].rows);
-  }
-}
-
-async function saveKPDoc(section) {
-  if (!docs[section]) { alert('Сначала создайте или загрузите документ'); return; }
-  const url = section === 'roller' ? `/api/roller/${docs[section].id}` : section === 'arrival' ? `/api/kp_arrival/${docs[section].id}` : `/api/kp_departure/${docs[section].id}`;
-  await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({rows: docs[section].rows})});
-  alert('Документ сохранён');
-}
-
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-init();
+loadAll();
 </script>
 {% endblock %}
