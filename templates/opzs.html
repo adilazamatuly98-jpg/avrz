@@ -158,9 +158,11 @@
       <div id="p-num-fields">
         <div class="form-row form-row-2">
           <div class="form-group"><label class="form-label">Номер до</label><input class="form-control" id="p-number" placeholder="напр. 12-3456"></div>
+          <div class="form-group" id="wrap-number-after"><label class="form-label">Номер после</label><input class="form-control" id="p-number-after" placeholder="новый номер детали"></div>
           <div class="form-group"><label class="form-label">Завод-изготовитель</label><select class="form-control" id="p-zavod"></select></div>
           <div class="form-group"><label class="form-label">Год изготовления</label><select class="form-control" id="p-god"></select></div>
-          <div class="form-group"><label class="form-label">Снято/ушло</label><select class="form-control" id="p-cond-num"></select></div>
+          <div class="form-group" id="wrap-cond-num"><label class="form-label">Снято/ушло</label><select class="form-control" id="p-cond-num"></select></div>
+          <div class="form-group" id="wrap-installed-from-num"><label class="form-label">Установлено из</label><select class="form-control" id="p-installed-num"><option>из оборота</option><option>новый</option><option>давальческий</option></select></div>
         </div>
       </div>
 
@@ -168,7 +170,8 @@
       <div id="p-unnum-fields">
         <div class="form-row form-row-2">
           <div class="form-group"><label class="form-label">Количество</label><input class="form-control" id="p-qty" type="number" value="1" min="1"></div>
-          <div class="form-group"><label class="form-label">Снято/ушло</label><select class="form-control" id="p-cond-unnum"></select></div>
+          <div class="form-group" id="wrap-cond-unnum"><label class="form-label">Снято/ушло</label><select class="form-control" id="p-cond-unnum"></select></div>
+          <div class="form-group" id="wrap-installed-from-unnum"><label class="form-label">Установлено из</label><select class="form-control" id="p-installed-unnum"><option>из оборота</option><option>новый</option><option>давальческий</option></select></div>
         </div>
       </div>
 
@@ -184,14 +187,7 @@
             <input class="form-control" id="p-class-detail" placeholder="напр. Класс А">
           </div>
         </div>
-        <div class="form-group" id="wrap-installed-from" style="margin-top:14px; display:none;">
-          <label class="form-label">Поставлено из</label>
-          <select class="form-control" id="p-installed-from">
-            <option value="Из оборота">Из оборота</option>
-            <option value="Новый">Новый</option>
-            <option value="Давальческий">Давальческий</option>
-          </select>
-        </div>
+
       </div>
 
       <!-- Обоснование выбраковки (только при забраковано) -->
@@ -529,16 +525,16 @@ function renderParts(){
   // Динамическая сборка заголовков таблиц в зависимости от участка АКП
   const numHeader = document.querySelector('#parts-num-table thead');
   if (isAKP) {
-    numHeader.innerHTML = `<tr><th>Деталь</th><th>Тип</th><th>Класс</th><th>Номер до</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Поставлено из</th><th></th></tr>`;
+    numHeader.innerHTML = `<tr><th>Деталь</th><th>Тип</th><th>Класс</th><th>Номер до</th><th>Номер после</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Поставлено из</th><th></th></tr>`;
   } else {
-    numHeader.innerHTML = `<tr><th>Деталь</th><th>Номер до</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Обоснование выбраковки</th><th></th></tr>`;
+    numHeader.innerHTML = `<tr><th>Деталь</th><th>Номер до</th><th>Номер после</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Обоснование выбраковки</th><th></th></tr>`;
   }
 
   const unnumHeader = document.querySelector('#parts-unnum-table thead');
   unnumHeader.innerHTML = `<tr><th>Деталь</th><th>Кол-во</th><th>Снято/ушло</th><th>Обоснование выбраковки</th><th></th></tr>`;
 
   // Отрендерим номерные детали
-  if(!numIdx.length){numBody.innerHTML=`<tr class="row-empty"><td colspan="${isAKP ? 9 : 7}">${editable?'Добавьте номерные детали':'Нет'}</td></tr>`;}
+  if(!numIdx.length){numBody.innerHTML=`<tr class="row-empty"><td colspan="${isAKP ? 10 : 8}">${editable?'Добавьте номерные детали':'Нет'}</td></tr>`;}
   else {
     numBody.innerHTML=numIdx.map(i=>{
       const p=parts[i];
@@ -548,6 +544,7 @@ function renderParts(){
           <td>${p.type_detail ? `<span class="badge badge-blue">${esc(p.type_detail)}</span>` : '—'}</td>
           <td>${p.class_detail ? `<span class="badge badge-gray">${esc(p.class_detail)}</span>` : '—'}</td>
           <td class="text-mono">${esc(p.number)||'—'}</td>
+          <td class="text-mono">${esc(p.number_after)||'—'}</td>
           <td>${esc(p.zavod)||'—'}</td>
           <td class="text-mono">${esc(p.god)||'—'}</td>
           <td>${condBadge(p.cond)}</td>
@@ -558,6 +555,7 @@ function renderParts(){
         return `<tr>
           <td class="font-bold">${esc(p.type)}</td>
           <td class="text-mono">${esc(p.number)||'—'}</td>
+          <td class="text-mono">${esc(p.number_after)||'—'}</td>
           <td>${esc(p.zavod)||'—'}</td>
           <td class="text-mono">${esc(p.god)||'—'}</td>
           <td>${condBadge(p.cond)}</td>
@@ -673,7 +671,8 @@ document.getElementById('p-cond-unnum').onchange = () => handleModalFieldsVisibi
 function openAddPart(kind){
   editIndex=null;
   fillPartRefs();
-  document.getElementById('p-number').value='';
+document.getElementById('p-number').value='';
+  document.getElementById('p-number-after').value='';
   document.getElementById('p-qty').value='1';
   document.getElementById('p-reject-reason').value='';
   document.getElementById('p-type-detail').value='';
@@ -704,15 +703,17 @@ function editPart(i){
   ensureOption('p-type',p.type);
   if((p.kind||'unnum')==='num'){
     document.getElementById('p-number').value=p.number||'';
+    document.getElementById('p-number-after').value=p.number_after||'';
     fillYears('p-god',p.god||'2026');
     ensureOption('p-zavod',p.zavod||'');
     document.getElementById('p-cond-num').value=p.cond||'в оборот';
     document.getElementById('p-type-detail').value=p.type_detail||'';
     document.getElementById('p-class-detail').value=p.class_detail||'';
-    document.getElementById('p-installed-from').value=p.installed_from||'Из оборота';
+    document.getElementById('p-installed-num').value=p.installed_from||'из оборота';
   }else{
     document.getElementById('p-qty').value=p.qty||'1';
     document.getElementById('p-cond-unnum').value=p.cond||'в оборот';
+    document.getElementById('p-installed-unnum').value=p.installed_from||'из оборота';
   }
   document.getElementById('p-reject-reason').value=p.reject_reason||'';
   document.getElementById('p-modal-title').textContent='Изменить деталь';
@@ -736,18 +737,20 @@ function commitPart(keepOpen){
     const god=document.getElementById('p-god').value;
     obj={kind:'num',type,
       number:document.getElementById('p-number').value,
+      number_after:document.getElementById('p-number-after').value,
       zavod,god,
       cond:document.getElementById('p-cond-num').value,
+      installed_from:document.getElementById('p-installed-num').value,
       reject_reason:document.getElementById('p-reject-reason').value,
       type_detail: isAKP ? document.getElementById('p-type-detail').value : '',
       class_detail: isAKP ? document.getElementById('p-class-detail').value : '',
-      installed_from: (isAKP && ROLE !== 'defektoskopist') ? document.getElementById('p-installed-from').value : ''
     };
     lastZavod=zavod||lastZavod; lastGod=god||lastGod;
   }else{
     obj={kind:'unnum',type,
       qty:document.getElementById('p-qty').value,
       cond:document.getElementById('p-cond-unnum').value,
+      installed_from:document.getElementById('p-installed-unnum').value,
       reject_reason:document.getElementById('p-reject-reason').value
     };
   }
@@ -757,6 +760,7 @@ function commitPart(keepOpen){
   renderParts();
   if(keepOpen){
     document.getElementById('p-number').value='';
+    document.getElementById('p-number-after').value='';
     document.getElementById('p-qty').value='1';
     document.getElementById('p-reject-reason').value='';
     toast('Деталь добавлена','ok');
