@@ -152,7 +152,6 @@
                placeholder="Начните вводить название детали…"
                autocomplete="off" style="width:100%;">
         <datalist id="parts-datalist"></datalist>
-        <div id="p-type-quick" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
       </div>
 
       <!-- Поля номерной детали -->
@@ -272,17 +271,6 @@
   body{background:#fff!important}
 }
 
-<style>
-.chip-part{
-  display:inline-flex;align-items:center;
-  padding:4px 10px;border-radius:99px;
-  font-size:11px;font-weight:600;
-  background:var(--blue-50);color:var(--accent);
-  border:1px solid var(--blue-100);
-  cursor:pointer;transition:var(--t);white-space:nowrap;
-}
-.chip-part:hover{background:var(--accent);color:#fff;}
-</style>
 {% endblock %}
 {% block scripts %}
 <script>
@@ -632,7 +620,6 @@ function setPartKind(kind){
   const ref=(kind==='num'?(META.numbered||{}):(META.unnumbered||{}))[curDoc.uchastok]||[];
   // Clear input when switching kind
   const inp=document.getElementById('p-type'); if(inp) inp.value='';
-  if(curDoc) renderPartChips(curDoc.uchastok);
 }
 function fillPartRefs(){
   const optionsHtml = REMOVED_OPTIONS.map(o => `<option value="${o}">${esc(o)}</option>`).join('');
@@ -646,19 +633,6 @@ function fillPartRefs(){
   }
 }
 
-// Быстрые чипы деталей по участку
-function renderPartChips(uchastok){
-  const el = document.getElementById('p-type-quick');
-  if(!el) return;
-  const ref = (curKind==='num'
-    ? (META.numbered||{})[uchastok]
-    : (META.unnumbered||{})[uchastok]) || [];
-  if(!ref.length){ el.style.display='none'; return; }
-  el.style.display='flex';
-  el.innerHTML = ref.slice(0,8).map(name=>`
-    <button type="button" class="chip-part" onclick="document.getElementById('p-type').value='${esc(name)}'">${esc(name)}</button>
-  `).join('');
-}
 // гарантируем наличие значения в select
 function ensureOption(id,val){
   if(val==null||val==='')return;
@@ -685,7 +659,7 @@ function handleModalFieldsVisibility(kind) {
   // 2. Поле "Обоснование выбраковки" (только дефектоскописту при выборе "Забраковано")
   const condVal = document.getElementById(kind === 'num' ? 'p-cond-num' : 'p-cond-unnum').value;
   const rejectWrap = document.getElementById('wrap-reject-reason');
-  if (isDefekt && condVal === 'Забраковано') {
+  if (isDefekt && condVal === 'забраковано' || condVal === 'Забраковано') {
     rejectWrap.style.display = 'block';
   } else {
     rejectWrap.style.display = 'none';
@@ -714,9 +688,9 @@ function openAddPart(kind){
   document.getElementById('p-add-more').style.display='inline-flex';
   
   // Блокируем изменение выбора Снято/ушло для всех, кроме дефектоскописта
-  const isDefekt = (ROLE === 'defektoskopist');
-  document.getElementById('p-cond-num').disabled = !isDefekt;
-  document.getElementById('p-cond-unnum').disabled = !isDefekt;
+  // Снято/ушло доступно для всех редакторов
+  document.getElementById('p-cond-num').disabled = false;
+  document.getElementById('p-cond-unnum').disabled = false;
 
   handleModalFieldsVisibility(kind||'num');
   openModal('m-part');
@@ -745,9 +719,9 @@ function editPart(i){
   document.getElementById('p-add-more').style.display='none';
   
   // Блокируем изменение выбора Снято/ушло для всех, кроме дефектоскописта
-  const isDefekt = (ROLE === 'defektoskopist');
-  document.getElementById('p-cond-num').disabled = !isDefekt;
-  document.getElementById('p-cond-unnum').disabled = !isDefekt;
+  // Снято/ушло доступно для всех редакторов
+  document.getElementById('p-cond-num').disabled = false;
+  document.getElementById('p-cond-unnum').disabled = false;
 
   handleModalFieldsVisibility(p.kind||'unnum');
   openModal('m-part');
