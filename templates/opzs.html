@@ -521,63 +521,69 @@ function renderParts(){
   parts.forEach((p,i)=>{ (p.kind==='num'?numIdx:unnumIdx).push(i); });
 
   const isAKP = (curDoc.uchastok === 'akp');
+  // Логика колонок по роли
+  const isDefekt = (ROLE === 'defektoskopist');
+  const isBoss   = (ROLE === 'nachalnik' || ROLE === 'nachalnik_ktc' || ROLE === 'admin');
+  // АКП и боссы — показываем обе колонки. Дефектоскопист — только Снято/ушло. Мастер других участков — только Установлено из.
+  const showCondCol      = isDefekt || isAKP || isBoss;
+  const showInstalledCol = !isDefekt && (isAKP || isBoss || ROLE === 'master' || ROLE === 'master_roller');
 
-  // Динамическая сборка заголовков таблиц в зависимости от участка АКП
+  // Динамическая сборка заголовков таблиц
   const numHeader = document.querySelector('#parts-num-table thead');
-  if (isAKP) {
-    numHeader.innerHTML = `<tr><th>Деталь</th><th>Тип</th><th>Класс</th><th>Номер до</th><th>Номер после</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Поставлено из</th><th></th></tr>`;
-  } else {
-    numHeader.innerHTML = `<tr><th>Деталь</th><th>Номер до</th><th>Номер после</th><th>Завод</th><th>Год</th><th>Снято/ушло</th><th>Обоснование выбраковки</th><th></th></tr>`;
-  }
+  let numCols = ['Деталь'];
+  if (isAKP) { numCols.push('Тип', 'Класс'); }
+  numCols.push('Номер до', 'Номер после', 'Завод', 'Год');
+  if (showCondCol)      numCols.push('Снято/ушло');
+  if (showInstalledCol) numCols.push('Установлено из');
+  if (!isAKP)           numCols.push('Обоснование выбраковки');
+  numCols.push('');
+  numHeader.innerHTML = '<tr>' + numCols.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+  const numColspan = numCols.length;
 
   const unnumHeader = document.querySelector('#parts-unnum-table thead');
-  unnumHeader.innerHTML = `<tr><th>Деталь</th><th>Кол-во</th><th>Снято/ушло</th><th>Обоснование выбраковки</th><th></th></tr>`;
+  let unnumCols = ['Деталь', 'Кол-во'];
+  if (showCondCol)      unnumCols.push('Снято/ушло');
+  if (showInstalledCol) unnumCols.push('Установлено из');
+  unnumCols.push('Обоснование выбраковки', '');
+  unnumHeader.innerHTML = '<tr>' + unnumCols.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+  const unnumColspan = unnumCols.length;
 
   // Отрендерим номерные детали
-  if(!numIdx.length){numBody.innerHTML=`<tr class="row-empty"><td colspan="${isAKP ? 10 : 8}">${editable?'Добавьте номерные детали':'Нет'}</td></tr>`;}
+  if(!numIdx.length){numBody.innerHTML=`<tr class="row-empty"><td colspan="${numColspan}">${editable?'Добавьте номерные детали':'Нет'}</td></tr>`;}
   else {
     numBody.innerHTML=numIdx.map(i=>{
       const p=parts[i];
+      const cells = [];
+      cells.push(`<td class="font-bold">${esc(p.type)}</td>`);
       if (isAKP) {
-        return `<tr>
-          <td class="font-bold">${esc(p.type)}</td>
-          <td>${p.type_detail ? `<span class="badge badge-blue">${esc(p.type_detail)}</span>` : '—'}</td>
-          <td>${p.class_detail ? `<span class="badge badge-gray">${esc(p.class_detail)}</span>` : '—'}</td>
-          <td class="text-mono">${esc(p.number)||'—'}</td>
-          <td class="text-mono">${esc(p.number_after)||'—'}</td>
-          <td>${esc(p.zavod)||'—'}</td>
-          <td class="text-mono">${esc(p.god)||'—'}</td>
-          <td>${condBadge(p.cond)}</td>
-          <td>${p.installed_from ? `<span class="badge badge-blue">${esc(p.installed_from)}</span>` : '—'}</td>
-          <td>${editable?`<div class="flex gap-2"><button class="btn btn-secondary btn-xs" onclick="editPart(${i})">✎</button><button class="btn btn-danger btn-xs" onclick="rmPart(${i})">✕</button></div>`:''}</td>
-        </tr>`;
-      } else {
-        return `<tr>
-          <td class="font-bold">${esc(p.type)}</td>
-          <td class="text-mono">${esc(p.number)||'—'}</td>
-          <td class="text-mono">${esc(p.number_after)||'—'}</td>
-          <td>${esc(p.zavod)||'—'}</td>
-          <td class="text-mono">${esc(p.god)||'—'}</td>
-          <td>${condBadge(p.cond)}</td>
-          <td class="text-muted">${esc(p.reject_reason)||'—'}</td>
-          <td>${editable?`<div class="flex gap-2"><button class="btn btn-secondary btn-xs" onclick="editPart(${i})">✎</button><button class="btn btn-danger btn-xs" onclick="rmPart(${i})">✕</button></div>`:''}</td>
-        </tr>`;
+        cells.push(`<td>${p.type_detail ? `<span class="badge badge-blue">${esc(p.type_detail)}</span>` : '—'}</td>`);
+        cells.push(`<td>${p.class_detail ? `<span class="badge badge-gray">${esc(p.class_detail)}</span>` : '—'}</td>`);
       }
+      cells.push(`<td class="text-mono">${esc(p.number)||'—'}</td>`);
+      cells.push(`<td class="text-mono">${esc(p.number_after)||'—'}</td>`);
+      cells.push(`<td>${esc(p.zavod)||'—'}</td>`);
+      cells.push(`<td class="text-mono">${esc(p.god)||'—'}</td>`);
+      if (showCondCol)      cells.push(`<td>${condBadge(p.cond)}</td>`);
+      if (showInstalledCol) cells.push(`<td>${p.installed_from ? `<span class="badge badge-blue">${esc(p.installed_from)}</span>` : '—'}</td>`);
+      if (!isAKP)           cells.push(`<td class="text-muted">${esc(p.reject_reason)||'—'}</td>`);
+      cells.push(`<td>${editable?`<div class="flex gap-2"><button class="btn btn-secondary btn-xs" onclick="editPart(${i})">✎</button><button class="btn btn-danger btn-xs" onclick="rmPart(${i})">✕</button></div>`:''}</td>`);
+      return `<tr>${cells.join('')}</tr>`;
     }).join('');
   }
 
   // Отрендерим неномерные детали
-  if(!unnumIdx.length){unnumBody.innerHTML=`<tr class="row-empty"><td colspan="5">${editable?'Добавьте неномерные детали':'Нет'}</td></tr>`;}
+  if(!unnumIdx.length){unnumBody.innerHTML=`<tr class="row-empty"><td colspan="${unnumColspan}">${editable?'Добавьте неномерные детали':'Нет'}</td></tr>`;}
   else {
     unnumBody.innerHTML=unnumIdx.map(i=>{
       const p=parts[i];
-      return `<tr>
-        <td class="font-bold">${esc(p.type)}</td>
-        <td class="text-mono">${esc(p.qty)||'—'}</td>
-        <td>${condBadge(p.cond)}</td>
-        <td class="text-muted">${esc(p.reject_reason)||'—'}</td>
-        <td>${editable?`<div class="flex gap-2"><button class="btn btn-secondary btn-xs" onclick="editPart(${i})">✎</button><button class="btn btn-danger btn-xs" onclick="rmPart(${i})">✕</button></div>`:''}</td>
-      </tr>`;
+      const uCells = [];
+      uCells.push(`<td class="font-bold">${esc(p.type)}</td>`);
+      uCells.push(`<td class="text-mono">${esc(p.qty)||'—'}</td>`);
+      if (showCondCol)      uCells.push(`<td>${condBadge(p.cond)}</td>`);
+      if (showInstalledCol) uCells.push(`<td>${p.installed_from ? `<span class="badge badge-blue">${esc(p.installed_from)}</span>` : '—'}</td>`);
+      uCells.push(`<td class="text-muted">${esc(p.reject_reason)||'—'}</td>`);
+      uCells.push(`<td>${editable?`<div class="flex gap-2"><button class="btn btn-secondary btn-xs" onclick="editPart(${i})">✎</button><button class="btn btn-danger btn-xs" onclick="rmPart(${i})">✕</button></div>`:''}</td>`);
+      return `<tr>${uCells.join('')}</tr>`;
     }).join('');
   }
   
