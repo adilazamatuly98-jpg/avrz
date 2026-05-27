@@ -270,7 +270,10 @@ const CAN_APPROVE=(ROLE==='nachalnik'||ROLE==='admin');
 const CAN_EDIT=(ROLE!=='nachalnik'&&ROLE!=='admin');
 
 // Исключительно 3 жестких регламентированных варианта выбытия
-const REMOVED_OPTIONS = ['В оборот', 'Забраковано', 'Отсутствовала'];
+// Снято/ушло — опции для дефектоскописта
+const REMOVED_OPTIONS = ['в оборот', 'забраковано', 'отсутствовало'];
+// Установлено из — опции для мастера  
+const INSTALLED_OPTIONS = ['из оборота', 'новый', 'давальческий'];
 
 let META={}, allDocs=[], curUch=SHOW_TABS?'avtoscepka':MY_UCH, curDoc=null, curStatus='';
 
@@ -684,13 +687,13 @@ function editPart(i){
     document.getElementById('p-number').value=p.number||'';
     fillYears('p-god',p.god||'2026');
     ensureOption('p-zavod',p.zavod||'');
-    document.getElementById('p-cond-num').value=p.cond||'В оборот';
+    document.getElementById('p-cond-num').value=p.cond||'в оборот';
     document.getElementById('p-type-detail').value=p.type_detail||'';
     document.getElementById('p-class-detail').value=p.class_detail||'';
     document.getElementById('p-installed-from').value=p.installed_from||'Из оборота';
   }else{
     document.getElementById('p-qty').value=p.qty||'1';
-    document.getElementById('p-cond-unnum').value=p.cond||'В оборот';
+    document.getElementById('p-cond-unnum').value=p.cond||'в оборот';
   }
   document.getElementById('p-reject-reason').value=p.reject_reason||'';
   document.getElementById('p-modal-title').textContent='Изменить деталь';
