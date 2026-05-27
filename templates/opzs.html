@@ -572,8 +572,7 @@ function renderParts(){
 }
 function renderFooter(){
   const f=document.getElementById('doc-footer');
-  let h=`<button class="btn btn-secondary" onclick="closeModal('m-doc')">Закрыть</button>
-         // печать отключена`;
+  let h=`<button class="btn btn-secondary" onclick="closeModal('m-doc')">Закрыть</button>`;
   if(CAN_APPROVE){
     if(curDoc.status==='На утверждении'){
       h+=`<button class="btn btn-danger" onclick="openModal('m-reject')">↩ На доработку</button>
